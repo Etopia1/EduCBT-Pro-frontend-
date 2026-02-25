@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import TeacherLayout from '../components/TeacherLayout';
@@ -27,7 +27,7 @@ const StaffAttendance = () => {
             const month = String(currentDate.getMonth() + 1).padStart(2, '0');
             const day = String(currentDate.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
-            const res = await axios.get(`http://localhost:2000/school/staff/attendance?date=${dateStr}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/staff/attendance?date=${dateStr}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStaffData(res.data);
@@ -49,7 +49,7 @@ const StaffAttendance = () => {
         }
         setMarking(true);
         try {
-            await axios.post('http://localhost:2000/school/staff/time-in', {}, {
+            await axios.post('https://educbt-pro-backend.onrender.com/school/staff/time-in', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Time In marked successfully!");
@@ -64,7 +64,7 @@ const StaffAttendance = () => {
     const handleTimeOut = async () => {
         setMarking(true);
         try {
-            await axios.post('http://localhost:2000/school/staff/time-out', {}, {
+            await axios.post('https://educbt-pro-backend.onrender.com/school/staff/time-out', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Time Out marked successfully!");

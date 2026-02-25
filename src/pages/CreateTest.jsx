@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -48,7 +48,7 @@ const CreateTest = () => {
     const fetchExamForEdit = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`http://localhost:2000/exam/${editId}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${editId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Ensure questions have all necessary fields
@@ -74,7 +74,7 @@ const CreateTest = () => {
 
     const fetchTeacherProfile = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/teacher/profile', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTeacherProfile(res.data);
@@ -185,7 +185,7 @@ const CreateTest = () => {
         formData.append('image', file);
 
         try {
-            const res = await axios.post('http://localhost:2000/exam/teacher/upload-image', formData, {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/exam/teacher/upload-image', formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -221,12 +221,12 @@ const CreateTest = () => {
         setLoading(true);
         try {
             if (editId) {
-                await axios.put(`http://localhost:2000/exam/${editId}`, examData, {
+                await axios.put(`https://educbt-pro-backend.onrender.com/exam/${editId}`, examData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Test updated successfully!');
             } else {
-                await axios.post('http://localhost:2000/exam/create', examData, {
+                await axios.post('https://educbt-pro-backend.onrender.com/exam/create', examData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Test created successfully!');

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
@@ -21,7 +21,7 @@ const VerifyEmail = () => {
             try {
                 // Determine if this is a School Admin verification or generic user verification
                 // We'll call the generic verify endpoint which handles the token
-                await axios.post('http://localhost:2000/school/verify-email', { token });
+                await axios.post('https://educbt-pro-backend.onrender.com/school/verify-email', { token });
 
                 setStatus('success');
                 setMessage('Email verified successfully! You can now log in.');

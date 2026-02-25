@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import AdminLayout from '../components/AdminLayout';
@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 
 const COLORS = ['#10B981', '#F59E0B', '#EF4444'];
 
-// ── Glassy stat card ────────────────────────────────────────────────────
+// -- Glassy stat card ----------------------------------------------------
 const StatCard = ({ title, value, icon: Icon, gradient, glow }) => (
     <div className={`relative overflow-hidden rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6 flex flex-col gap-3 group hover:border-white/15 transition-all duration-300`}>
         {/* Glow blob */}
@@ -33,7 +33,7 @@ const StatCard = ({ title, value, icon: Icon, gradient, glow }) => (
     </div>
 );
 
-// ── Custom dark tooltip for recharts ────────────────────────────────────
+// -- Custom dark tooltip for recharts ------------------------------------
 const DarkTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
@@ -71,8 +71,8 @@ const AdminDashboard = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const [statsRes, growthRes] = await Promise.all([
-                axios.get('http://localhost:2000/school/dashboard/stats', config),
-                axios.get('http://localhost:2000/school/analytics/user-growth', config)
+                axios.get('https://educbt-pro-backend.onrender.com/school/dashboard/stats', config),
+                axios.get('https://educbt-pro-backend.onrender.com/school/analytics/user-growth', config)
             ]);
             setStats(statsRes.data);
             setUserGrowth(growthRes.data);
@@ -92,7 +92,7 @@ const AdminDashboard = () => {
         <AdminLayout>
             <div className="space-y-8">
 
-                {/* ── Welcome banner ─────────────────────────────────── */}
+                {/* -- Welcome banner ----------------------------------- */}
                 <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent p-6 md:p-8">
                     <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 bg-indigo-500 -translate-y-1/2 translate-x-1/2" />
                     {/* Dot grid */}
@@ -108,20 +108,20 @@ const AdminDashboard = () => {
                             <span className="text-indigo-300 text-xs font-semibold">School Dashboard</span>
                         </div>
                         <h1 className="text-2xl md:text-3xl font-black text-white mb-1">
-                            Good morning, <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">{user?.schoolName || 'Admin'}</span> 👋
+                            Good morning, <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">{user?.schoolName || 'Admin'}</span> ??
                         </h1>
                         <p className="text-slate-400 text-sm">Here's an overview of your school's activity today.</p>
                     </div>
                 </div>
 
-                {/* ── KPI Cards ──────────────────────────────────────── */}
+                {/* -- KPI Cards ---------------------------------------- */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {kpiCards.map((card) => (
                         <StatCard key={card.title} {...card} />
                     ))}
                 </div>
 
-                {/* ── Charts ─────────────────────────────────────────── */}
+                {/* -- Charts ------------------------------------------- */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                     {/* User Growth Bar Chart */}
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                {/* ── Alerts & Term ──────────────────────────────────── */}
+                {/* -- Alerts & Term ------------------------------------ */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                     {/* System Alerts */}
@@ -253,7 +253,7 @@ const AdminDashboard = () => {
                                 onChange={async (e) => {
                                     try {
                                         const newDate = e.target.value;
-                                        await axios.post('http://localhost:2000/school/term/update',
+                                        await axios.post('https://educbt-pro-backend.onrender.com/school/term/update',
                                             { termEndDate: newDate },
                                             { headers: { Authorization: `Bearer ${token}` } }
                                         );

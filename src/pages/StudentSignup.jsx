@@ -1,4 +1,4 @@
-ï»¿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { User, MapPin, Hash, Book, Lock, Building2, ArrowRight, GraduationCap } from 'lucide-react';
@@ -38,7 +38,7 @@ const StudentSignup = () => {
         if (!schoolRefId && !urlSchoolId) {
             const fetchSchools = async () => {
                 try {
-                    const res = await axios.get('http://localhost:2000/school/list');
+                    const res = await axios.get('https://educbt-pro-backend.onrender.com/school/list');
                     setSchools(res.data);
                 } catch (error) {
                     console.error("Failed to fetch schools");
@@ -52,7 +52,7 @@ const StudentSignup = () => {
             const verifyRef = async () => {
                 setIsCheckingRef(true);
                 try {
-                    const res = await axios.get(`http://localhost:2000/school/ref-info/${schoolRefId}`);
+                    const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/ref-info/${schoolRefId}`);
                     setSchoolInfo(res.data);
                     setFormData(prev => ({ ...prev, schoolId: res.data._id }));
                 } catch (error) {
@@ -68,7 +68,7 @@ const StudentSignup = () => {
         else if (urlSchoolId) {
             const fetchSchoolInfo = async () => {
                 try {
-                    const res = await axios.get(`http://localhost:2000/school/public/${urlSchoolId}`);
+                    const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/public/${urlSchoolId}`);
                     setSchoolInfo(res.data);
                 } catch (error) {
                     console.error("Failed to fetch school info");
@@ -110,7 +110,7 @@ const StudentSignup = () => {
                 data.append('profilePicture', profilePicture);
             }
 
-            const res = await axios.post('http://localhost:2000/school/signup/student', data, {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/school/signup/student', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success("Registration successful!");
@@ -374,7 +374,7 @@ const StudentSignup = () => {
                                     <input
                                         type="password" name="password" required
                                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-gray-800 text-sm placeholder-gray-400"
-                                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                                        placeholder="••••••••"
                                         value={formData.password} onChange={handleChange}
                                     />
                                 </div>
@@ -386,7 +386,7 @@ const StudentSignup = () => {
                                     <input
                                         type="password" name="confirmPassword" required
                                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-gray-800 text-sm placeholder-gray-400"
-                                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                                        placeholder="••••••••"
                                         value={formData.confirmPassword} onChange={handleChange}
                                     />
                                 </div>

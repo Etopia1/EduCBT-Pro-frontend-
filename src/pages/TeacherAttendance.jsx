@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
@@ -42,7 +42,7 @@ const TeacherAttendance = () => {
 
     const fetchTeacherProfile = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/teacher/profile', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTeacherProfile(res.data);
@@ -53,7 +53,7 @@ const TeacherAttendance = () => {
 
     const fetchClassStudents = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/teacher/class-students', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/class-students', {
                 headers: { Authorization: `Bearer ${token} ` }
             });
             setStudents(res.data);
@@ -67,7 +67,7 @@ const TeacherAttendance = () => {
 
     const fetchAttendanceForDate = async (date) => {
         try {
-            const res = await axios.get(`http://localhost:2000/school/teacher/attendance?date=${date}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/teacher/attendance?date=${date}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -134,7 +134,7 @@ const TeacherAttendance = () => {
             const day = String(dateObj.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
 
-            await axios.post('http://localhost:2000/school/teacher/attendance',
+            await axios.post('https://educbt-pro-backend.onrender.com/school/teacher/attendance',
                 { date: dateStr, records, isLocked: shouldLock },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

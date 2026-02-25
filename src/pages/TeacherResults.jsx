@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -32,7 +32,7 @@ const TeacherResults = () => {
     const fetchExams = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('http://localhost:2000/exam/teacher/all', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/teacher/all', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExams(res.data);
@@ -49,7 +49,7 @@ const TeacherResults = () => {
 
     const fetchResults = async (examId) => {
         try {
-            const res = await axios.get(`http://localhost:2000/exam/${examId}/sessions`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}/sessions`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Filter only completed sessions

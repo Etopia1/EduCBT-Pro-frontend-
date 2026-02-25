@@ -1,4 +1,4 @@
-ï»¿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { BookOpen, MapPin, User, Mail, Lock, Plus, X, Phone, Building2, ArrowRight, CheckCircle, GraduationCap, Users } from 'lucide-react';
@@ -42,7 +42,7 @@ const TeacherSignup = () => {
         // Fetch list of schools for dropdown selection (only if no token/id specific)
         const fetchSchools = async () => {
             try {
-                const res = await axios.get('http://localhost:2000/school/list');
+                const res = await axios.get('https://educbt-pro-backend.onrender.com/school/list');
                 setSchools(res.data);
             } catch (error) {
                 console.error("Failed to fetch schools");
@@ -61,7 +61,7 @@ const TeacherSignup = () => {
                     // Let's try invite-info endpoint which now supports schoolRefId fallback or we create new endpoint?
                     // Actually, let's try `invite-info` first.
                     try {
-                        const res = await axios.get(`http://localhost:2000/school/invite-info/${token}`);
+                        const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/invite-info/${token}`);
                         setSchoolInfo(res.data.school);
                         setFormData(prev => ({
                             ...prev,
@@ -72,7 +72,7 @@ const TeacherSignup = () => {
                     } catch (err) {
                         // If invite-info fails, try as School Ref ID
                         try {
-                            const resRef = await axios.get(`http://localhost:2000/school/ref-info/${token}`);
+                            const resRef = await axios.get(`https://educbt-pro-backend.onrender.com/school/ref-info/${token}`);
                             setSchoolInfo(resRef.data);
                             setFormData(prev => ({
                                 ...prev,
@@ -93,7 +93,7 @@ const TeacherSignup = () => {
         else if (urlSchoolId) {
             const fetchSchoolInfo = async () => {
                 try {
-                    const res = await axios.get(`http://localhost:2000/school/public/${urlSchoolId}`);
+                    const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/public/${urlSchoolId}`);
                     setSchoolInfo(res.data);
                     setFormData(prev => ({ ...prev, schoolId: res.data._id }));
                 } catch (error) {
@@ -159,7 +159,7 @@ const TeacherSignup = () => {
                 data.append('profilePicture', profilePicture);
             }
 
-            await axios.post('http://localhost:2000/school/signup/teacher', data, {
+            await axios.post('https://educbt-pro-backend.onrender.com/school/signup/teacher', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success("Registration successful! Please login.");
@@ -440,7 +440,7 @@ const TeacherSignup = () => {
                                         <input
                                             type="password" name="password" required
                                             className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm"
-                                            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢"
+                                            placeholder="••••••"
                                             value={formData.password} onChange={handleChange}
                                         />
                                     </div>
@@ -452,7 +452,7 @@ const TeacherSignup = () => {
                                         <input
                                             type="password" name="confirmPassword" required
                                             className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm"
-                                            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢"
+                                            placeholder="••••••"
                                             value={formData.confirmPassword} onChange={handleChange}
                                         />
                                     </div>

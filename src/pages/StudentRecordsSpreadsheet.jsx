@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
@@ -13,7 +13,7 @@ import {
 import toast from 'react-hot-toast';
 import { fillTemplate, flattenStudent } from './ResultTemplateManager';
 
-// ─── Subject columns ────────────────────────────────────────────────
+// --- Subject columns ------------------------------------------------
 const subjects = [
     { key: 'mathematics', label: 'Maths' },
     { key: 'english', label: 'English' },
@@ -35,7 +35,7 @@ const subjects = [
     { key: 'agriculturalScience', label: 'Agric Sci' },
 ];
 
-// ─── Grade helper ────────────────────────────────────────────────────
+// --- Grade helper ----------------------------------------------------
 const getGrade = (score) => {
     if (score >= 75) return { grade: 'A', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', bar: 'bg-emerald-500', shadow: 'shadow-emerald-500/20' };
     if (score >= 60) return { grade: 'B', color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20', bar: 'bg-indigo-500', shadow: 'shadow-indigo-500/20' };
@@ -53,7 +53,7 @@ const avatarColors = [
     'from-violet-500 to-fuchsia-500',
 ];
 
-// ─── Student Result Modal ────────────────────────────────────────────
+// --- Student Result Modal --------------------------------------------
 const StudentResultModal = ({ record, onClose, subjects }) => {
     if (!record) return null;
 
@@ -88,7 +88,7 @@ const StudentResultModal = ({ record, onClose, subjects }) => {
                         <div>
                             <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1 italic">Registry Node #{record._id.slice(-4)}</p>
                             <h2 className="text-white text-2xl font-black uppercase italic tracking-tight mb-1">{record.fullName}</h2>
-                            <p className="text-white/80 text-sm font-bold opacity-80 uppercase tracking-widest">{record.registrationNumber} · {record.classLevel}</p>
+                            <p className="text-white/80 text-sm font-bold opacity-80 uppercase tracking-widest">{record.registrationNumber} � {record.classLevel}</p>
                         </div>
                     </div>
 
@@ -131,7 +131,7 @@ const StudentResultModal = ({ record, onClose, subjects }) => {
                                                     <span>Exam: <strong className="text-slate-300 ml-1">{s.exam}</strong></span>
                                                 </div>
                                                 <span className={`text-[10px] font-black px-3 py-1 rounded-lg border italic tracking-widest ${s.color}`}>
-                                                    {s.total} — {s.grade}
+                                                    {s.total} � {s.grade}
                                                 </span>
                                             </div>
                                             <div className="h-2 bg-slate-950 rounded-full overflow-hidden shadow-inner">
@@ -175,7 +175,7 @@ const StudentResultModal = ({ record, onClose, subjects }) => {
     );
 };
 
-// ─── Main Component ──────────────────────────────────────────────────
+// --- Main Component --------------------------------------------------
 const StudentRecordsSpreadsheet = () => {
     const { token } = useSelector((state) => state.auth);
     const [records, setRecords] = useState([]);
@@ -199,7 +199,7 @@ const StudentRecordsSpreadsheet = () => {
             setLoading(true);
             const params = {};
             if (classFilter !== 'all') params.classLevel = classFilter;
-            const res = await axios.get('http://localhost:2000/student-records/with-permissions', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/student-records/with-permissions', {
                 headers,
                 params
             });
@@ -214,7 +214,7 @@ const StudentRecordsSpreadsheet = () => {
 
     const fetchResultTemplate = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/result-template', { headers });
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/result-template', { headers });
             setResultTemplate(res.data.template);
         } catch { /* no template yet */ }
     };
@@ -222,7 +222,7 @@ const StudentRecordsSpreadsheet = () => {
     const initializeClass = async () => {
         if (!classFilter || classFilter === 'all') { toast.error('Please select a specific class sector'); return; }
         try {
-            const res = await axios.post('http://localhost:2000/student-records/initialize-class',
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/student-records/initialize-class',
                 { classLevel: classFilter, term: 'Current Term', academicYear: '2025/2026' },
                 { headers }
             );
@@ -234,7 +234,7 @@ const StudentRecordsSpreadsheet = () => {
     const publishSubject = async (subject, publish) => {
         if (!classFilter || classFilter === 'all') { toast.error('Please select a specific class sector'); return; }
         try {
-            const res = await axios.post('http://localhost:2000/student-records/publish-subject',
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/student-records/publish-subject',
                 { classLevel: classFilter, subject: subject.label, publish },
                 { headers }
             );
@@ -254,7 +254,7 @@ const StudentRecordsSpreadsheet = () => {
         const { recordId, subject } = editingCell;
         const subjectLabel = subjects.find(s => s.key === subject)?.label;
         try {
-            await axios.put(`http://localhost:2000/student-records/${recordId}/exam-score`,
+            await axios.put(`https://educbt-pro-backend.onrender.com/student-records/${recordId}/exam-score`,
                 { subject: subjectLabel, score: parseFloat(tempValue) || 0 },
                 { headers }
             );
@@ -313,7 +313,7 @@ const StudentRecordsSpreadsheet = () => {
         filtered.forEach((record, i) => {
             setTimeout(() => downloadResult(record), i * 300); 
         });
-        toast.success(`Batch processing ${filtered.length} records…`);
+        toast.success(`Batch processing ${filtered.length} records�`);
     };
 
     const filtered = records.filter(r =>
@@ -335,7 +335,7 @@ const StudentRecordsSpreadsheet = () => {
     return (
         <TeacherLayout>
             <div className="space-y-10 pb-20 animate-in fade-in duration-700">
-                {/* ── Header ── */}
+                {/* -- Header -- */}
                 <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
                     <div className="absolute -top-24 -left-20 w-64 h-64 bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none" />
                     
@@ -414,7 +414,7 @@ const StudentRecordsSpreadsheet = () => {
                     </div>
                 </div>
 
-                {/* ── Publish Controls ── */}
+                {/* -- Publish Controls -- */}
                 {classFilter !== 'all' && teacherSubjects.length > 0 && (
                     <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 shadow-2xl animate-in slide-in-from-top-4 duration-500">
                         <div className="flex items-center gap-3 mb-6">
@@ -445,7 +445,7 @@ const StudentRecordsSpreadsheet = () => {
                     </div>
                 )}
 
-                {/* ── Empty state ── */}
+                {/* -- Empty state -- */}
                 {filtered.length === 0 && (
                     <div className="bg-slate-900/40 backdrop-blur-xl rounded-[3rem] p-24 text-center border border-white/5 shadow-2xl group transition-all">
                         <div className="w-24 h-24 bg-slate-950/50 border border-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner group-hover:scale-105 transition-transform">
@@ -460,7 +460,7 @@ const StudentRecordsSpreadsheet = () => {
                     </div>
                 )}
 
-                {/* ── CARD VIEW ── */}
+                {/* -- CARD VIEW -- */}
                 {view === 'cards' && filtered.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filtered.map((record) => {
@@ -539,7 +539,7 @@ const StudentRecordsSpreadsheet = () => {
                     </div>
                 )}
 
-                {/* ── TABLE VIEW ── */}
+                {/* -- TABLE VIEW -- */}
                 {view === 'table' && filtered.length > 0 && (
                     <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
                         <div className="overflow-x-auto">

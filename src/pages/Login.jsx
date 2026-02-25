@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginStart, loginSuccess, loginFailure } from '../redux/authSlice';
@@ -20,7 +20,7 @@ const Login = () => {
         e.preventDefault();
         dispatch(loginStart());
         try {
-            const res = await axios.post('http://localhost:2000/auth/login', credentials);
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/auth/login', credentials);
             dispatch(loginSuccess(res.data));
             const user = res.data.user;
             if (user.role === 'admin') navigate('/admin');
@@ -85,7 +85,7 @@ const Login = () => {
 
                     {error && (
                         <div className="mb-5 flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl px-4 py-3 text-sm">
-                            <span className="shrink-0">⚠</span>
+                            <span className="shrink-0">?</span>
                             {error}
                         </div>
                     )}

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import io from 'socket.io-client';
 import StudentScreen from '../components/Proctoring/StudentScreen';
 
-const socket = io('http://localhost:2000');
+const socket = io('https://educbt-pro-backend.onrender.com');
 
 const ExamMonitor = () => {
     const { examId } = useParams();
@@ -62,7 +62,7 @@ const ExamMonitor = () => {
 
     const fetchExamDetails = async () => {
         try {
-            const res = await axios.get(`http://localhost:2000/exam/${examId}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExam(res.data);
@@ -74,7 +74,7 @@ const ExamMonitor = () => {
 
     const fetchSessions = async () => {
         try {
-            const res = await axios.get(`http://localhost:2000/exam/${examId}/sessions`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}/sessions`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSessions(res.data);
@@ -87,7 +87,7 @@ const ExamMonitor = () => {
 
     const handleUnlock = async (sessionId) => {
         try {
-            await axios.post(`http://localhost:2000/exam/session/${sessionId}/unlock`, {}, {
+            await axios.post(`https://educbt-pro-backend.onrender.com/exam/session/${sessionId}/unlock`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Session unlocked successfully');
@@ -100,7 +100,7 @@ const ExamMonitor = () => {
     const handleLock = async (sessionId) => {
         const reason = window.prompt('Enter reason for locking (optional):') || 'Locked by teacher';
         try {
-            await axios.post(`http://localhost:2000/exam/session/${sessionId}/lock`,
+            await axios.post(`https://educbt-pro-backend.onrender.com/exam/session/${sessionId}/lock`,
                 { reason },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -118,7 +118,7 @@ const ExamMonitor = () => {
         const reason = window.prompt('Enter reason for force submission (optional):');
 
         try {
-            const res = await axios.post(`http://localhost:2000/exam/session/${sessionId}/force-submit`,
+            const res = await axios.post(`https://educbt-pro-backend.onrender.com/exam/session/${sessionId}/force-submit`,
                 { reason: reason || 'Force submitted due to violations' },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -329,13 +329,13 @@ const ExamMonitor = () => {
                         onClick={() => navigate('/teacher/tests')}
                         className="mb-4 text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-2"
                     >
-                        ← Back to Tests
+                        ? Back to Tests
                     </button>
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-black text-gray-900">{exam?.title}</h1>
                             <p className="text-sm text-gray-600 mt-1">
-                                {exam?.classLevel} • Real-time Monitoring
+                                {exam?.classLevel} � Real-time Monitoring
                             </p>
                         </div>
                         <div className="flex items-center gap-4">
@@ -403,7 +403,7 @@ const ExamMonitor = () => {
                             <div className="flex justify-between items-start mb-6">
                                 <div>
                                     <h2 className="text-2xl font-black text-gray-900">{selectedSession.student.name}</h2>
-                                    <p className="text-gray-600">{selectedSession.student.classLevel} • {selectedSession.student.username}</p>
+                                    <p className="text-gray-600">{selectedSession.student.classLevel} � {selectedSession.student.username}</p>
                                 </div>
                                 <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-gray-600">
                                     <XCircle size={24} />

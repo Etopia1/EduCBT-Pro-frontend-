@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -25,7 +25,7 @@ const TeacherAttendanceHistory = () => {
 
     const fetchTeacherProfile = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/teacher/profile', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTeacherProfile(res.data);
@@ -36,7 +36,7 @@ const TeacherAttendanceHistory = () => {
 
     const fetchHistory = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/teacher/history', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/history', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setHistory(res.data);
@@ -60,7 +60,7 @@ const TeacherAttendanceHistory = () => {
         const loadingToast = toast.loading("Preparing PDF...");
         try {
             const dateStr = record.date.split('T')[0];
-            const res = await axios.get(`http://localhost:2000/school/teacher/attendance?date=${dateStr}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/teacher/attendance?date=${dateStr}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -70,7 +70,7 @@ const TeacherAttendanceHistory = () => {
             }
 
             // Fetch class students to get full names
-            const studentsRes = await axios.get('http://localhost:2000/school/teacher/class-students', {
+            const studentsRes = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/class-students', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const students = studentsRes.data;

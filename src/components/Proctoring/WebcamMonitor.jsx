@@ -67,7 +67,7 @@ const WebcamMonitor = ({ onViolation, studentId }) => {
 
                 try {
                     // 3. Send to Python AI Server
-                    const response = await axios.post('http://localhost:8000/analyze-frame', formData, {
+                    const response = await axios.post('https://educbt-pro-backend.onrender.com/analyze-frame', formData, {
                         headers: {
                             'Content-Type': 'multipart/form-data',
                         },

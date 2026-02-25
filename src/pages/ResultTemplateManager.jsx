@@ -154,7 +154,7 @@ const ResultTemplateManager = () => {
     const fetchTemplate = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('http://localhost:2000/result-template', { headers });
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/result-template', { headers });
             setTemplate(res.data.template);
             setMappings(res.data.template.fieldMappings || {});
         } catch (e) {
@@ -180,7 +180,7 @@ const ResultTemplateManager = () => {
             formData.append('templateName', file.name);
             formData.append('detectedPlaceholders', JSON.stringify(detected));
 
-            const res = await axios.post('http://localhost:2000/result-template/upload', formData, {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/result-template/upload', formData, {
                 headers: { ...headers, 'Content-Type': 'multipart/form-data' }
             });
             setTemplate(res.data.template);
@@ -195,7 +195,7 @@ const ResultTemplateManager = () => {
 
     const saveMappings = async () => {
         try {
-            const res = await axios.put('http://localhost:2000/result-template/mappings', { mappings }, { headers });
+            const res = await axios.put('https://educbt-pro-backend.onrender.com/result-template/mappings', { mappings }, { headers });
             setTemplate(res.data.template);
             toast.success('Mappings saved!');
         } catch { toast.error('Failed to save mappings'); }
@@ -204,7 +204,7 @@ const ResultTemplateManager = () => {
     const deleteTemplate = async () => {
         if (!confirm('Delete the uploaded template? This cannot be undone.')) return;
         try {
-            await axios.delete('http://localhost:2000/result-template', { headers });
+            await axios.delete('https://educbt-pro-backend.onrender.com/result-template', { headers });
             setTemplate(null);
             setMappings({});
             toast.success('Template deleted');

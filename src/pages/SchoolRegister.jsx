@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -54,7 +54,7 @@ const SchoolRegister = () => {
 
         const loadingToast = toast.loading('Registering school...');
         try {
-            const res = await axios.post('http://localhost:2000/school/register', data);
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/school/register', data);
             toast.dismiss(loadingToast);
             toast.success('Registration successful! Check your email.', { duration: 6000 });
             toast((t) => (
@@ -62,7 +62,7 @@ const SchoolRegister = () => {
                     Your Login ID: <b>{res.data.schoolLoginId}</b>
                     <br />Please save this!
                 </span>
-            ), { duration: 8000, icon: '🔑' });
+            ), { duration: 8000, icon: '??' });
             navigate('/login');
         } catch (error) {
             toast.dismiss(loadingToast);
@@ -332,7 +332,7 @@ const SchoolRegister = () => {
 
                                 <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
                                     <p className="text-indigo-300 text-xs leading-relaxed">
-                                        🔑 After registration, you'll receive a unique <strong>School Login ID</strong> (e.g. SCH-1234) by email. 
+                                        ?? After registration, you'll receive a unique <strong>School Login ID</strong> (e.g. SCH-1234) by email. 
                                         Use it together with your password to log in.
                                     </p>
                                 </div>

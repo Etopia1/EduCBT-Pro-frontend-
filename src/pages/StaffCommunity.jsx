@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { io } from 'socket.io-client';
@@ -22,7 +22,7 @@ const StaffCommunity = () => {
 
     useEffect(() => {
         // Connect Socket
-        const newSocket = io('http://localhost:2000');
+        const newSocket = io('https://educbt-pro-backend.onrender.com');
         setSocket(newSocket);
 
         // Join School Room
@@ -43,7 +43,7 @@ const StaffCommunity = () => {
 
     const fetchFeed = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/community/feed', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/community/feed', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPosts(res.data);
@@ -64,7 +64,7 @@ const StaffCommunity = () => {
         const loadingToast = toast.loading('Uploading attachment...');
 
         try {
-            const res = await axios.post('http://localhost:2000/community/upload', formData, {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/community/upload', formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -91,7 +91,7 @@ const StaffCommunity = () => {
         if (!content.trim() && attachments.length === 0) return;
 
         try {
-            await axios.post('http://localhost:2000/community/create', {
+            await axios.post('https://educbt-pro-backend.onrender.com/community/create', {
                 content,
                 attachments
             }, {
@@ -121,7 +121,7 @@ const StaffCommunity = () => {
                 return p;
             }));
 
-            await axios.post('http://localhost:2000/community/like', { postId }, {
+            await axios.post('https://educbt-pro-backend.onrender.com/community/like', { postId }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } catch (error) {

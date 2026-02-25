@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import AdminLayout from '../components/AdminLayout';
@@ -23,7 +23,7 @@ const Teachers = () => {
 
     const fetchTeachers = async () => {
         try {
-            const response = await axios.get('http://localhost:2000/school/teachers', {
+            const response = await axios.get('https://educbt-pro-backend.onrender.com/school/teachers', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTeachers(response.data);

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const socket = io('http://localhost:2000');
+const socket = io('https://educbt-pro-backend.onrender.com');
 
 const ExamPage = () => {
     const { user, token } = useSelector((state) => state.auth);
@@ -51,12 +51,12 @@ const ExamPage = () => {
     useEffect(() => {
         const fetchExamData = async () => {
             try {
-                const examRes = await axios.get(`http://localhost:2000/exam/${examId}`, { headers });
+                const examRes = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}`, { headers });
                 const fetchedExam = examRes.data;
                 setExam(fetchedExam);
                 setTimeLeft(fetchedExam.durationMinutes * 60);
 
-                const sessionRes = await axios.post('http://localhost:2000/exam/start',
+                const sessionRes = await axios.post('https://educbt-pro-backend.onrender.com/exam/start',
                     { examId: fetchedExam._id },
                     { headers }
                 );
@@ -66,7 +66,7 @@ const ExamPage = () => {
                 if (sessionRes.data.isLocked) {
                     setIsLocked(true);
                     setLockReason(sessionRes.data.lockReason || 'Exam locked by teacher');
-                    toast.error('This exam has been locked!', { icon: '🔒' });
+                    toast.error('This exam has been locked!', { icon: '??' });
                 }
 
                 setTimeout(() => enterFullscreen(), 500);
@@ -83,10 +83,10 @@ const ExamPage = () => {
         socket.emit('join_session', sessionId);
 
         socket.on('exam_terminated', (data) => {
-            toast.error("Session terminated by architect", { icon: '🛑' });
+            toast.error("Session terminated by architect", { icon: '??' });
             setSubmitted(true);
             if (sessionId && sessionId !== 'mock-session') {
-                axios.post('http://localhost:2000/exam/submit', { sessionId, answers }, { headers })
+                axios.post('https://educbt-pro-backend.onrender.com/exam/submit', { sessionId, answers }, { headers })
                     .finally(() => setTimeout(() => cleanupAndRedirect(), 3000));
             } else {
                 setTimeout(() => cleanupAndRedirect(), 3000);
@@ -96,13 +96,13 @@ const ExamPage = () => {
         socket.on('session_locked', (data) => {
             setIsLocked(true);
             setLockReason(data.reason || 'Architect protocol engaged');
-            toast.error("🔒 Security Lock Engaged", { style: { background: '#dc2626', color: '#fff' } });
+            toast.error("?? Security Lock Engaged", { style: { background: '#dc2626', color: '#fff' } });
         });
 
         socket.on('session_unlocked', () => {
             setIsLocked(false);
             setLockReason('');
-            toast.success("✅ Access Restored", { icon: '🔓' });
+            toast.success("? Access Restored", { icon: '??' });
         });
 
         return () => {
@@ -115,7 +115,7 @@ const ExamPage = () => {
     const enterFullscreen = () => {
         const elem = document.documentElement;
         if (elem.requestFullscreen) {
-            elem.requestFullscreen().catch(() => toast("Please enable Fullscreen", { icon: '🖥️' }));
+            elem.requestFullscreen().catch(() => toast("Please enable Fullscreen", { icon: '???' }));
         }
     };
 
@@ -148,7 +148,7 @@ const ExamPage = () => {
                 analyserRef.current = analyser;
 
                 // Screen share protocol
-                toast('📺 Selection: ENTIRE SCREEN required', { icon: '⚠️' });
+                toast('?? Selection: ENTIRE SCREEN required', { icon: '??' });
                 await new Promise(r => setTimeout(r, 1500));
                 
                 const screenStream = await navigator.mediaDevices.getDisplayMedia({
@@ -226,13 +226,13 @@ const ExamPage = () => {
         await recordViolation(type);
 
         if (type === 'tab_switch') {
-            toast.error('TAB SWITCH DETECTED. Critical breach.', { icon: '🚫' });
+            toast.error('TAB SWITCH DETECTED. Critical breach.', { icon: '??' });
             lockExam('Tab switch violation');
         } else if (type === 'ai_voice_detected' || type === 'excessive_talking') {
             setTalkingViolationCount(prev => {
                 const n = prev + 1;
                 if (n >= 5) lockExam('Acoustic violation');
-                else toast.error(`Acoustic Warning ${n}/5`, { icon: '🔇' });
+                else toast.error(`Acoustic Warning ${n}/5`, { icon: '??' });
                 return n;
             });
         } else {
@@ -260,7 +260,7 @@ const ExamPage = () => {
     const recordViolation = async (type) => {
         if (!sessionId || sessionId === 'mock-session') return;
         try {
-            await axios.post('http://localhost:2000/exam/violation/log', { sessionId, type }, { headers });
+            await axios.post('https://educbt-pro-backend.onrender.com/exam/violation/log', { sessionId, type }, { headers });
             socket.emit('report_violation', { sessionId, type, examId: exam._id });
         } catch {}
     };
@@ -287,7 +287,7 @@ const ExamPage = () => {
         setSubmitted(true);
         const tid = toast.loading("Encrypting submissions...");
         try {
-            const res = await axios.post('http://localhost:2000/exam/submit', { sessionId, answers }, { headers });
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/exam/submit', { sessionId, answers }, { headers });
             setResult(res.data);
             toast.success("Submissions accepted", { id: tid });
             if (document.fullscreenElement) document.exitFullscreen();
@@ -304,7 +304,7 @@ const ExamPage = () => {
         }
     };
 
-    // ─── Loading State ───
+    // --- Loading State ---
     if (!exam) return (
         <div className="min-h-screen bg-slate-950 flex items-center justify-center p-10 overflow-hidden relative">
             <div className="absolute top-0 left-0 w-full h-full opacity-10">
@@ -317,7 +317,7 @@ const ExamPage = () => {
                 </div>
                 <div className="space-y-2">
                     <p className="text-white font-black uppercase tracking-[0.3em] text-sm italic animate-pulse">Initializing Secure Matrix</p>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Verifying Proctor Protocols · Establishing Neural Link</p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Verifying Proctor Protocols � Establishing Neural Link</p>
                 </div>
             </div>
         </div>
@@ -329,7 +329,7 @@ const ExamPage = () => {
 
     return (
         <div className="flex flex-col h-screen bg-slate-950 text-slate-300 font-sans overflow-hidden">
-            {/* 🔒 OVERLAYS */}
+            {/* ?? OVERLAYS */}
             {exam?.examType === 'proctored' && (
                 <>
                     <WebcamMonitor
@@ -365,7 +365,7 @@ const ExamPage = () => {
                 </div>
             )}
 
-            {/* ── HEADER ── */}
+            {/* -- HEADER -- */}
             <header className="h-20 shrink-0 border-b border-white/5 bg-slate-900/40 backdrop-blur-2xl flex items-center px-8 relative z-50">
                 <div className="flex-1 flex items-center gap-6">
                     <div className="flex items-center gap-3">
@@ -374,7 +374,7 @@ const ExamPage = () => {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-white font-black uppercase italic tracking-tighter truncate text-lg leading-tight">{exam.title}</h1>
-                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">{exam.subject} · {exam.classLevel} Node</p>
+                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">{exam.subject} � {exam.classLevel} Node</p>
                         </div>
                     </div>
                     
@@ -402,7 +402,7 @@ const ExamPage = () => {
                 </div>
             </header>
 
-            {/* ── MAIN WORKSPACE ── */}
+            {/* -- MAIN WORKSPACE -- */}
             <main className="flex-1 flex overflow-hidden relative">
                 {/* Left Navigator Sidebar */}
                 <aside className="w-24 shrink-0 border-r border-white/5 bg-slate-900/40 p-4 space-y-3 overflow-y-auto no-scrollbar">
@@ -520,7 +520,7 @@ const ExamPage = () => {
                                             <Zap size={14} />
                                             {result.percentage}% Precision
                                         </div>
-                                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest pt-4">Result Matrix Resolved · ID #{sessionId?.slice(-6)}</p>
+                                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest pt-4">Result Matrix Resolved � ID #{sessionId?.slice(-6)}</p>
                                     </div>
                                 ) : (
                                     <div className="py-20 flex flex-col items-center gap-6">

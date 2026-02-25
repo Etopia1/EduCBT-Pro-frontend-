@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 import StudentLayout from '../components/StudentLayout';
 
-// ── Shared Stat Card Component ─────────────────────────────────────────
+// -- Shared Stat Card Component -----------------------------------------
 const StatCard = ({ title, value, icon: Icon, color }) => (
     <div className="bg-slate-800/40 backdrop-blur-sm border border-white/8 p-6 rounded-2xl flex items-center gap-4 group hover:border-white/15 transition-all">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${color} shadow-lg ring-1 ring-white/10`}>
@@ -37,7 +37,7 @@ const StudentDashboard = () => {
 
     const fetchExams = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/exam/student', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/student', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExams(res.data);
@@ -51,7 +51,7 @@ const StudentDashboard = () => {
 
     const fetchResults = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/exam/results', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/results', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setResults(res.data);
@@ -63,7 +63,7 @@ const StudentDashboard = () => {
     return (
         <StudentLayout>
             <div className="space-y-8 pb-10">
-                {/* ── KPI Container ───────────────────────────────────────── */}
+                {/* -- KPI Container ----------------------------------------- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <StatCard 
                         title="Active Tests" 
@@ -85,7 +85,7 @@ const StudentDashboard = () => {
                     />
                 </div>
 
-                {/* ── View Toggle ─────────────────────────────────────────── */}
+                {/* -- View Toggle ------------------------------------------- */}
                 <div className="flex bg-white/5 p-1 rounded-2xl w-fit border border-white/5 backdrop-blur-sm">
                     <button
                         onClick={() => setView('exams')}

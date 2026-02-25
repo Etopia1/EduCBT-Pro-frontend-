@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -7,7 +7,7 @@ import { Users, FileText, CheckCircle, Clock, UserCheck, AlertCircle, Plus, LogO
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 
-// ── Premium Dark Components ──────────────────────────────────────────
+// -- Premium Dark Components ------------------------------------------
 const COLORS = ['#10B981', '#F59E0B', '#EF4444'];
 
 const StatCard = ({ title, value, icon: Icon, gradient, glow }) => (
@@ -75,10 +75,10 @@ const TeacherDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             setIsLoading(true);
             const [statsRes, pendingRes, examsRes, profileRes] = await Promise.all([
-                axios.get('http://localhost:2000/school/teacher/stats', config),
-                axios.get('http://localhost:2000/school/teacher/pending-students', config),
-                axios.get('http://localhost:2000/exam/teacher/all', config),
-                axios.get('http://localhost:2000/school/teacher/profile', config)
+                axios.get('https://educbt-pro-backend.onrender.com/school/teacher/stats', config),
+                axios.get('https://educbt-pro-backend.onrender.com/school/teacher/pending-students', config),
+                axios.get('https://educbt-pro-backend.onrender.com/exam/teacher/all', config),
+                axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', config)
             ]);
 
             setStats({
@@ -98,7 +98,7 @@ const TeacherDashboard = () => {
     const handleApproveStudent = async (studentId) => {
         setApprovingId(studentId);
         try {
-            await axios.post('http://localhost:2000/school/teacher/approve-student',
+            await axios.post('https://educbt-pro-backend.onrender.com/school/teacher/approve-student',
                 { studentId },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -125,7 +125,7 @@ const TeacherDashboard = () => {
     return (
         <TeacherLayout>
             <div className="space-y-8 pb-10">
-                {/* ── Welcome Banner ─────────────────────────────────── */}
+                {/* -- Welcome Banner ----------------------------------- */}
                 <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent p-6 md:p-8">
                     <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 bg-indigo-500 -translate-y-1/2 translate-x-1/2" />
                     <div className="absolute inset-0 opacity-5"
@@ -142,12 +142,12 @@ const TeacherDashboard = () => {
                             </div>
                             {teacherProfile?.subscription?.canMonitor && (
                                 <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1 animate-pulse">
-                                    <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest leading-none">✨ Premium Pro</span>
+                                    <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest leading-none">? Premium Pro</span>
                                 </div>
                             )}
                         </div>
                         <h1 className="text-2xl md:text-3xl font-black text-white mb-1">
-                            Welcome back, <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">{user?.fullName || 'Teacher'}</span> 🎓
+                            Welcome back, <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">{user?.fullName || 'Teacher'}</span> ??
                         </h1>
                         <p className="text-slate-400 text-sm italic">Manage your classes and assessments with precision.</p>
                     </div>
@@ -184,7 +184,7 @@ const TeacherDashboard = () => {
                                         <div>
                                             <h4 className="text-sm font-bold text-slate-200">{student.fullName}</h4>
                                             <p className="text-xs text-slate-500 mt-0.5">
-                                                {student.info?.registrationNumber || 'No ID'} • <span className="text-amber-400/80">{student.info?.classLevel}</span>
+                                                {student.info?.registrationNumber || 'No ID'} � <span className="text-amber-400/80">{student.info?.classLevel}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -193,7 +193,7 @@ const TeacherDashboard = () => {
                                         disabled={approvingId === student._id}
                                         className="h-9 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
                                     >
-                                        {approvingId === student._id ? <span className="animate-spin text-lg">◌</span> : <CheckCircle size={14} />}
+                                        {approvingId === student._id ? <span className="animate-spin text-lg">?</span> : <CheckCircle size={14} />}
                                         {approvingId === student._id ? 'Working...' : 'Approve'}
                                     </button>
                                 </div>

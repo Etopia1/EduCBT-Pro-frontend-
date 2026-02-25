@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import {
@@ -73,9 +73,9 @@ const Subscription = () => {
         handlePaymentReturn();
     }, []);
 
-    // ── Parse payment result from URL after Stripe redirect ──────────────────
+    // -- Parse payment result from URL after Stripe redirect ------------------
     // HashRouter puts query params in the hash, e.g. /#/school/subscription?payment=success
-    // window.location.search is empty in this case — we must parse from the full href.
+    // window.location.search is empty in this case � we must parse from the full href.
     const handlePaymentReturn = () => {
         const href = window.location.href;
         const hashPart = href.split('#')[1] || '';
@@ -87,7 +87,7 @@ const Subscription = () => {
         const sessionId = params.get('session_id');
 
         if (paymentStatus === 'success') {
-            toast.success('🎉 Payment successful! Your subscription has been activated.', {
+            toast.success('?? Payment successful! Your subscription has been activated.', {
                 duration: 6000,
                 style: { background: '#22c55e', color: '#fff', fontWeight: 'bold' }
             });
@@ -105,16 +105,16 @@ const Subscription = () => {
 
     const verifySession = async (sessionId) => {
         try {
-            await axios.get(`http://localhost:2000/subscription/verify/${sessionId}`, {
+            await axios.get(`https://educbt-pro-backend.onrender.com/subscription/verify/${sessionId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-        } catch { /* silent — webhook may have already handled it */ }
+        } catch { /* silent � webhook may have already handled it */ }
     };
 
     const fetchSubscription = async () => {
         try {
             if (!user?.schoolId) return;
-            const res = await axios.get(`http://localhost:2000/subscription/${user.schoolId}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/subscription/${user.schoolId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Controller returns { success, subscription, isActive }
@@ -133,7 +133,7 @@ const Subscription = () => {
                 toast.error('School information not found. Please contact support.');
                 return;
             }
-            const res = await axios.post('http://localhost:2000/subscription/checkout', {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/subscription/checkout', {
                 schoolId: user.schoolId,
                 plan: planId,
                 interval
@@ -160,7 +160,7 @@ const Subscription = () => {
     const isActive = currentPlan?.status === 'active' || currentPlan?.status === 'trial' || currentPlan?.status === 'trialing';
 
     const formatDate = (dateStr) => {
-        if (!dateStr) return '—';
+        if (!dateStr) return '�';
         return new Date(dateStr).toLocaleDateString('en-GB', {
             day: 'numeric', month: 'short', year: 'numeric'
         });
@@ -183,19 +183,19 @@ const Subscription = () => {
                         </span>
                         {currentPlan?.currentPeriodEnd && (
                             <span className="text-xs text-gray-400 ml-1">
-                                · renews {formatDate(currentPlan.currentPeriodEnd)}
+                                � renews {formatDate(currentPlan.currentPeriodEnd)}
                             </span>
                         )}
                     </div>
                 </div>
 
-                {/* ── School-wide access callout ── */}
+                {/* -- School-wide access callout -- */}
                 <div className="flex items-start gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
                     <Users size={20} className="text-indigo-600 shrink-0 mt-0.5" />
                     <div>
                         <p className="font-bold text-indigo-900 text-sm">Your subscription covers your entire school</p>
                         <p className="text-indigo-700 text-sm mt-0.5">
-                            All teachers and staff at your school automatically get access to every feature included in your plan — no extra seats or per-user charges.
+                            All teachers and staff at your school automatically get access to every feature included in your plan � no extra seats or per-user charges.
                         </p>
                     </div>
                 </div>

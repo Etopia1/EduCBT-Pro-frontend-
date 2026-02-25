@@ -24,7 +24,7 @@ const StudentLayout = ({ children }) => {
         try {
             // Reusing teacher profile endpoint as it returns common school/user info
             // or we could have a student-specific one if needed.
-            const res = await axios.get('http://localhost:2000/school/teacher/profile', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUser(res.data);
