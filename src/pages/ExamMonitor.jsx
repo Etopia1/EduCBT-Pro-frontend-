@@ -39,7 +39,6 @@ const ScreenTile = ({ session, onRequest, stream, isExpanded, onExpand, onAction
                     ref={videoRef}
                     autoPlay
                     playsInline
-                    muted
                     className="w-full h-full object-cover"
                     style={{ minHeight: 160 }}
                 />
@@ -268,8 +267,13 @@ const ExamMonitor = () => {
                 axios.get(`http://localhost:2000/exam/${examId}/sessions`, { headers: { Authorization: `Bearer ${token}` } }),
             ]);
             setExam(eData.data);
-            setSessions(sData.data);
-            calcStats(sData.data);
+            // Normalize: flatten student.name -> studentName for convenience
+            const normalized = sData.data.map(s => ({
+                ...s,
+                studentName: s.student?.name || s.student?.username || 'Student',
+            })).filter(s => s._id); // skip not-started (no session yet)
+            setSessions(normalized);
+            calcStats(normalized);
             setLoading(false);
         } catch {
             toast.error('Failed to load exam data');
@@ -277,13 +281,13 @@ const ExamMonitor = () => {
         }
     };
 
+
     const calcStats = (data) => setStats({
         active: data.filter(s => s.status === 'ongoing').length,
         completed: data.filter(s => s.status === 'completed').length,
         violations: data.reduce((acc, s) => acc + (s.violationCount || 0), 0),
     });
 
-    // ── Actions ─────────────────────────────────────────────────────
     const handleAction = async (type, session) => {
         if (type === 'view') { setSelectedSession(session); return; }
 
@@ -294,7 +298,9 @@ const ExamMonitor = () => {
                 await axios.post(`http://localhost:2000/exam/session/${session._id}/${action}`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                toast.success(session.isLocked ? `✅ ${session.studentName} unlocked` : `🔒 ${session.studentName} locked`);
+                toast.success(session.isLocked
+                    ? `✅ ${session.studentName} unlocked`
+                    : `🔒 ${session.studentName} locked`);
                 setSessions(prev => prev.map(s => s._id === session._id ? { ...s, isLocked: !session.isLocked } : s));
             } catch { toast.error('Action failed'); }
             finally { setProcessing(null); }
@@ -326,6 +332,7 @@ const ExamMonitor = () => {
             finally { setProcessing(null); }
         }
     };
+
 
     // ── Get stream for a session ────────────────────────────────────
     const getStreamForSession = (session) => {

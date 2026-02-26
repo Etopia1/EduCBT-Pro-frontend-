@@ -77,16 +77,23 @@ const ExamPage = () => {
             const sid = sessionRes.data.sessionId || sessionRes.data._id;
             setSessionId(sid);
 
+            // Announce presence to teacher IMMEDIATELY (before asking for screen permission)
+            // This ensures the teacher ALWAYS sees the student even if they deny screen share
+            socketRef.current?.emit('student_joined_monitor', {
+                examId,
+                sessionId: sid,
+                studentName: user?.fullName || user?.username || 'Student'
+            });
+
             startTimer();
             setLoading(false);
 
-            // Start proctoring (screen share + camera) for proctored exams
-            if (examRes.data.examType === 'proctored' || examRes.data.proctoringSettings?.requireCamera) {
-                setTimeout(() => {
-                    startCamera(sid, examId);
-                    startScreenShare(sid, examId);
-                }, 1000);
-            }
+            // Start screen share + camera for ALL exams (with audio)
+            setTimeout(() => {
+                startScreenShare(sid, examId);
+                startCamera(sid, examId);
+            }, 800);
+
         } catch (error) {
             console.error('Exam start error:', error);
             toast.error('Failed to load exam. Please try again.');
@@ -101,25 +108,52 @@ const ExamPage = () => {
         Object.values(peerConnsRef.current).forEach(pc => pc.close());
     };
 
-    // SCREEN SHARING via WebRTC
+    // ── SCREEN SHARING + AUDIO via WebRTC ──────────────────────────
     const startScreenShare = async (sid, eid) => {
         try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-            screenStreamRef.current = stream;
+            // Request screen + audio (microphone during exam)
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: { frameRate: 15, width: { ideal: 1280 }, height: { ideal: 720 } },
+                audio: true  // Include system audio if available
+            });
+
+            // Also grab mic audio and mix it in
+            let finalStream = screenStream;
+            try {
+                const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                const tracks = [
+                    ...screenStream.getVideoTracks(),
+                    ...screenStream.getAudioTracks(),
+                    ...micStream.getAudioTracks()
+                ];
+                finalStream = new MediaStream(tracks);
+            } catch { /* mic optional */ }
+
+            screenStreamRef.current = finalStream;
             setScreenSharing(true);
-            stream.getTracks()[0].onended = () => setScreenSharing(false);
+            finalStream.getVideoTracks()[0].onended = () => {
+                setScreenSharing(false);
+                toast('Screen sharing stopped');
+            };
 
             const socket = socketRef.current;
 
-            // Listen for SDP answer from teacher (fixed event name: 'screen_answer')
+            // ── WebRTC handlers ───────────────────────────────────────
+            // Remove old listeners to avoid duplicates
+            socket.off('screen_answer');
+            socket.off('ice_candidate');
+            socket.off('request_screen');
+
+            // Teacher sends SDP answer → apply it
             socket.on('screen_answer', async ({ answer, teacherSocketId }) => {
                 const pc = peerConnsRef.current[teacherSocketId];
                 if (pc) {
-                    try { await pc.setRemoteDescription(new RTCSessionDescription(answer)); } catch (e) {}
+                    try { await pc.setRemoteDescription(new RTCSessionDescription(answer)); }
+                    catch (e) { console.warn('[WebRTC] setRemote answer failed:', e.message); }
                 }
             });
 
-            // Listen for ICE candidate from teacher (fixed event name: 'ice_candidate')
+            // ICE candidate from teacher
             socket.on('ice_candidate', async ({ candidate, senderSocketId }) => {
                 const pc = peerConnsRef.current[senderSocketId];
                 if (pc && candidate) {
@@ -127,38 +161,63 @@ const ExamPage = () => {
                 }
             });
 
-            // Build an RTCPeerConnection and send offer to a specific teacher
+            // Build RTCPeerConnection and send offer to teacher
             const sendOffer = async (teacherSocketId) => {
-                // Avoid duplicate connections
+                console.log('[WebRTC] Sending offer to teacher:', teacherSocketId);
+                // Close old connection if any
                 if (peerConnsRef.current[teacherSocketId]) {
                     peerConnsRef.current[teacherSocketId].close();
                 }
-                const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                const pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
                 peerConnsRef.current[teacherSocketId] = pc;
-                stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+                // Add all tracks (video + audio) to the peer connection
+                finalStream.getTracks().forEach(track => {
+                    pc.addTrack(track, finalStream);
+                });
+
                 pc.onicecandidate = ({ candidate }) => {
-                    if (candidate) socket.emit('ice_candidate', { targetSocketId: teacherSocketId, candidate });
+                    if (candidate) {
+                        socket.emit('ice_candidate', { targetSocketId: teacherSocketId, candidate });
+                    }
                 };
+
+                pc.onconnectionstatechange = () => {
+                    console.log('[WebRTC] Connection state:', pc.connectionState);
+                };
+
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                // Send offer to teacher via backend
                 socket.emit('screen_offer', { examId: eid, sessionId: sid, offer, socketId: socket.id });
             };
 
-            // Teacher requests screen → send offer
+            // Teacher requests screen → send WebRTC offer
             socket.on('request_screen', ({ teacherSocketId }) => {
+                console.log('[WebRTC] Teacher requested screen, socketId:', teacherSocketId);
                 sendOffer(teacherSocketId);
             });
 
-            // Announce presence to teacher monitor room
+            // Notify teacher that screen is now ready (re-announce with screen flag)
             socket.emit('student_joined_monitor', {
                 examId: eid,
                 sessionId: sid,
-                studentName: user?.fullName || user?.username || 'Student'
+                studentName: user?.fullName || user?.username || 'Student',
+                hasScreen: true
             });
 
+            toast.success('Screen sharing started — teacher can now see your screen');
+
         } catch (err) {
-            console.warn('Screen share declined or unavailable:', err.message);
+            if (err.name === 'NotAllowedError') {
+                toast('Screen sharing was declined. Your teacher won\'t see your screen.', { icon: '⚠️' });
+            } else {
+                console.warn('[ScreenShare] Error:', err.message);
+            }
         }
     };
 
