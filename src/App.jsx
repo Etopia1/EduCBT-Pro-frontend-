@@ -31,14 +31,19 @@ import StaffCommunity from './pages/StaffCommunity';
 import ResultTemplateManager from './pages/ResultTemplateManager';
 import GradingDashboard from './pages/GradingDashboard';
 import AdminSettings from './pages/AdminSettings';
+import TeacherAnalytics from './pages/TeacherAnalytics';
+import AdminActivityMonitor from './pages/AdminActivityMonitor';
 
 import { Toaster } from 'react-hot-toast';
+
+import { SocketProvider } from './context/SocketContext';
 
 function App() {
   return (
     <Router>
-      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-      <Routes>
+      <SocketProvider>
+        <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+        <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register-school" element={<SchoolRegister />} />
@@ -96,6 +101,14 @@ function App() {
           element={
             <PrivateRoute role="school_admin">
               <StaffCommunity />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/school/activity"
+          element={
+            <PrivateRoute role="school_admin">
+              <AdminActivityMonitor />
             </PrivateRoute>
           }
         />
@@ -174,6 +187,14 @@ function App() {
           }
         />
         <Route
+          path="/teacher/analytics"
+          element={
+            <PrivateRoute role="teacher">
+              <TeacherAnalytics />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/teacher/grading"
           element={
             <PrivateRoute role="teacher">
@@ -223,6 +244,7 @@ function App() {
           }
         />
       </Routes>
+      </SocketProvider>
     </Router>
   );
 }

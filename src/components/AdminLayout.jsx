@@ -8,11 +8,14 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import toast from 'react-hot-toast';
+import { useSocket } from '../context/SocketContext';
+import CallModal from './CallModal';
 
 const AdminLayout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
+    const { callState, socket, endCall } = useSocket();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -23,6 +26,7 @@ const AdminLayout = ({ children }) => {
         { path: '/school/students', label: 'Students', icon: GraduationCap },
         { path: '/school/exams', label: 'Exams', icon: FileQuestion },
         { path: '/school/results', label: 'Results', icon: ClipboardCheck },
+        { path: '/school/activity', label: 'Audit Log', icon: Activity },
         { path: '/school/community', label: 'Community', icon: MessageSquare },
         { path: '/school/settings', label: 'Settings', icon: Settings },
     ];
@@ -181,6 +185,15 @@ const AdminLayout = ({ children }) => {
                     {children}
                 </main>
             </div>
+
+            {callState && socket && (
+                <CallModal 
+                    socket={socket} 
+                    currentUser={user} 
+                    callState={callState} 
+                    onClose={endCall} 
+                />
+            )}
         </div>
     );
 };

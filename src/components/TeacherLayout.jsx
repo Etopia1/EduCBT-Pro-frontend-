@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CheckCircle, BarChart2, Bell, Settings, LogOut, Menu, X, UserCheck, BookOpen, Clock, Table, Users, ChevronRight, Activity } from 'lucide-react';
+import { LayoutDashboard, CheckCircle, BarChart2, Bell, Settings, LogOut, Menu, X, UserCheck, BookOpen, Clock, Table, Users, ChevronRight, Activity, TrendingUp } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import axios from 'axios';
+import { useAutoLogout } from '../hooks/useAutoLogout';
+import { useSocket } from '../context/SocketContext';
+import CallModal from './CallModal';
 
 const TeacherLayout = ({ children }) => {
     const { user: authUser, token } = useSelector((state) => state.auth);
+    const { callState, socket, endCall } = useSocket();
     const [user, setUser] = useState(authUser);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const dispatch = useDispatch();
     const location = useLocation();
     const navigate = useNavigate();
+
+    // Auto-logout after 20 minutes of inactivity
+    useAutoLogout(true);
 
     useEffect(() => {
         if (token) fetchProfile();
@@ -29,15 +36,16 @@ const TeacherLayout = ({ children }) => {
     };
 
     const navLinks = [
-        { path: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/teacher/tests', label: 'My Exams', icon: BookOpen },
-        { path: '/teacher/grading', label: 'Grading', icon: CheckCircle },
-        { path: '/teacher/results', label: 'Results', icon: BarChart2 },
-        { path: '/teacher/attendance', label: 'Attendance', icon: UserCheck },
-        { path: '/staff/attendance', label: 'Staff Attendance', icon: Clock },
-        { path: '/teacher/student-records', label: 'Student Records', icon: Table },
-        { path: '/teacher/community', label: 'Community', icon: Users },
-        { path: '/teacher/settings', label: 'Settings', icon: Settings },
+        { path: '/teacher/dashboard',         label: 'Dashboard',       icon: LayoutDashboard },
+        { path: '/teacher/tests',              label: 'My Exams',        icon: BookOpen },
+        { path: '/teacher/analytics',          label: 'Analytics',       icon: TrendingUp },
+        { path: '/teacher/grading',            label: 'Grading',         icon: CheckCircle },
+        { path: '/teacher/results',            label: 'Results',         icon: BarChart2 },
+        { path: '/teacher/attendance',         label: 'Attendance',      icon: UserCheck },
+        { path: '/staff/attendance',           label: 'Staff Attend.',   icon: Clock },
+        { path: '/teacher/student-records',    label: 'Student Records', icon: Table },
+        { path: '/teacher/community',          label: 'Community',       icon: Users },
+        { path: '/teacher/settings',           label: 'Settings',        icon: Settings },
     ];
 
     const handleLogout = () => {
@@ -173,6 +181,15 @@ const TeacherLayout = ({ children }) => {
                     {children}
                 </main>
             </div>
+
+            {callState && socket && (
+                <CallModal 
+                    socket={socket} 
+                    currentUser={authUser} 
+                    callState={callState} 
+                    onClose={endCall} 
+                />
+            )}
         </div>
     );
 };

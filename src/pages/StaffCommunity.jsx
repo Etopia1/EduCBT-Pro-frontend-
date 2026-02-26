@@ -1,277 +1,767 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import { Send, Image, FileText, Video, MoreHorizontal, Heart, MessageSquare, Paperclip, X } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { 
+    setConversations as setReduxConvs, 
+    updateConversationPreview, 
+    incrementUnread, 
+    clearUnread 
+} from '../redux/chatSlice';
 import TeacherLayout from '../components/TeacherLayout';
-import AdminLayout from '../components/AdminLayout'; // Will determine layout dynamically
+import AdminLayout from '../components/AdminLayout';
+import { encryptMessage, decryptMessage } from '../utils/crypto';
+import EmojiPicker from 'emoji-picker-react';
+import {
+    Send, Paperclip, Phone, Video, Search, Plus, X, Check, CheckCheck,
+    MoreVertical, ArrowLeft, Hash, Users, MessageSquare, Globe,
+    Mic, Lock, FileText, Smile, Shield, ChevronRight, BookOpen, UserCheck
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useSocket } from '../context/SocketContext';
+
+const API = 'http://localhost:2000';
 
 const StaffCommunity = () => {
-    const { token, user } = useSelector((state) => state.auth);
-    const [posts, setPosts] = useState([]);
-    const [content, setContent] = useState('');
+    const { token, user } = useSelector(s => s.auth);
+    const isTeacher = user?.role === 'teacher';
+    const Layout = isTeacher ? TeacherLayout : AdminLayout;
+    const schoolId = user?.schoolId;
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // ── Socket & Calls ──
+    const { socket, startCall: initiateCall } = useSocket();
+
+    const { conversations, unreadMap } = useSelector(s => s.chat);
+    const dispatch = useDispatch();
+
+    // ── Conversations & Messages ──
+    const [activeConv, setActiveConv] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [loadingMsgs, setLoadingMsgs] = useState(false);
+    const [sending, setSending] = useState(false);
+
+    // ── Staff ──
+    const [staff, setStaff] = useState([]);
+
+    // ── Input ──
+    const [text, setText] = useState('');
     const [attachments, setAttachments] = useState([]);
     const [uploading, setUploading] = useState(false);
-    const [socket, setSocket] = useState(null);
-    const messagesEndRef = useRef(null);
-    const fileInputRef = useRef(null);
+    const [showEmoji, setShowEmoji] = useState(false);
 
-    const isTeacher = user.role === 'teacher';
-    const Layout = isTeacher ? TeacherLayout : AdminLayout;
+    // ── UI state ──
+    const [view, setView] = useState('chats'); // 'chats' | 'newchat' | 'newgroup'
+    const [search, setSearch] = useState('');
+    const [mobileShowChat, setMobileShowChat] = useState(false);
 
+    // ── Group creation ──
+    const [groupName, setGroupName] = useState('');
+    const [groupDesc, setGroupDesc] = useState('');
+    const [groupMembers, setGroupMembers] = useState([]);
+
+    const fileRef = useRef(null);
+    const msgEndRef = useRef(null);
+    const inputRef = useRef(null);
+
+    // ─────────────────────────────────────────────
+    // Socket initialisation
+    // ─────────────────────────────────────────────
     useEffect(() => {
-        // Connect Socket
-        const newSocket = io('http://localhost:2000');
-        setSocket(newSocket);
+        if (!socket) return;
 
-        // Join School Room
-        if (user.schoolId) {
-            newSocket.emit('join_school_community', user.schoolId);
-        }
+        // Incoming message
+        socket.on('new_message', async (msg) => {
+            const dec = await decryptMessage(msg.content, schoolId).catch(() => msg.content);
+            const decMsg = { ...msg, content: dec };
+            
+            // Only update messages list if it's the active chat
+            setMessages(prev => {
+                if (prev.some(m => m._id === msg._id)) return prev;
+                // If it's NOT the active conv, we don't push it to the list (it will load when opened)
+                // but we might want to if we are already viewing it.
+                // However, the main goal is to update the preview and counts.
+                return [...prev, decMsg];
+            });
 
-        // Listen for new posts
-        newSocket.on('new_post', (post) => {
-            setPosts((prev) => [post, ...prev]);
+            if (String(msg.senderId) !== String(user?._id)) {
+                dispatch(incrementUnread(msg.groupId));
+            }
+
+            dispatch(updateConversationPreview({
+                groupId: msg.groupId,
+                content: msg.content?.substring(0, 60),
+                senderName: msg.senderName,
+                updatedAt: new Date().toISOString()
+            }));
         });
 
-        // Fetch initial feed
-        fetchFeed();
+        socket.on('account_action', ({ message }) => toast.error(message, { duration: 8000 }));
 
-        return () => newSocket.close();
-    }, [user.schoolId]);
-
-    const fetchFeed = async () => {
-        try {
-            const res = await axios.get('http://localhost:2000/community/feed', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setPosts(res.data);
-        } catch (error) {
-            console.error('Error fetching feed:', error);
-            toast.error('Failed to load community feed');
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
         }
+
+        return () => {
+            socket.off('new_message');
+            socket.off('account_action');
+        };
+    }, [socket, user?._id, schoolId]);
+
+    // ─────────────────────────────────────────────
+    // Initial data fetch
+    // ─────────────────────────────────────────────
+    useEffect(() => {
+        if (token) { fetchConversations(); fetchStaff(); }
+    }, [token]);
+
+    useEffect(() => { msgEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+    // Close emoji on outside click
+    useEffect(() => {
+        if (!showEmoji) return;
+        const handler = () => setShowEmoji(false);
+        document.addEventListener('click', handler);
+        return () => document.removeEventListener('click', handler);
+    }, [showEmoji]);
+
+    const fetchConversations = async () => {
+        try {
+            const res = await axios.get(`${API}/chat/groups`, { headers });
+            dispatch(setReduxConvs(res.data.sort((a, b) =>
+                new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0)
+            )));
+        } catch (e) { console.error(e); }
     };
 
-    const handleFileUpload = async (e) => {
+    const fetchStaff = async () => {
+        try {
+            const res = await axios.get(`${API}/chat/staff`, { headers });
+            setStaff(res.data);
+        } catch {}
+    };
+
+    // ─────────────────────────────────────────────
+    // Open conversation / load messages
+    // ─────────────────────────────────────────────
+    const openConversation = useCallback(async (conv) => {
+        if (activeConv?._id === conv._id) return;
+        if (activeConv && socket) socket.emit('leave_chat_group', activeConv._id);
+        setActiveConv(conv);
+        setMessages([]);
+        setMobileShowChat(true);
+        setView('chats');
+        setLoadingMsgs(true);
+        dispatch(clearUnread(conv._id));
+        if (socket) socket.emit('join_chat_group', conv._id);
+        try {
+            const res = await axios.get(`${API}/chat/groups/${conv._id}/messages`, { headers });
+            const decrypted = await Promise.all(res.data.map(async m => ({
+                ...m,
+                content: await decryptMessage(m.content, schoolId).catch(() => m.content)
+            })));
+            setMessages(decrypted);
+        } catch { toast.error('Could not load messages'); }
+        finally { setLoadingMsgs(false); inputRef.current?.focus(); }
+    }, [activeConv, socket, schoolId, headers]);
+
+    // ─────────────────────────────────────────────
+    // Send message
+    // ─────────────────────────────────────────────
+    const sendMessage = async (e) => {
+        e?.preventDefault();
+        if (!text.trim() && attachments.length === 0) return;
+        if (!activeConv) return;
+        const rawText = text;
+        const rawAtts = [...attachments];
+        setText('');
+        setAttachments([]);
+        setSending(true);
+        try {
+            const encrypted = await encryptMessage(rawText, schoolId).catch(() => rawText);
+            await axios.post(`${API}/chat/groups/${activeConv._id}/messages`, {
+                content: encrypted,
+                attachments: rawAtts
+            }, { headers });
+        } catch {
+            toast.error('Failed to send');
+            setText(rawText);
+            setAttachments(rawAtts);
+        } finally { setSending(false); }
+    };
+
+    // ─────────────────────────────────────────────
+    // Direct Message
+    // ─────────────────────────────────────────────
+    const startDM = async (targetUser) => {
+        try {
+            const res = await axios.post(`${API}/chat/dm`, { targetUserId: targetUser._id }, { headers });
+            setConversations(prev => {
+                const exists = prev.find(c => c._id === res.data._id);
+                return exists ? prev : [res.data, ...prev];
+            });
+            openConversation(res.data);
+        } catch { toast.error('Could not open DM'); }
+    };
+
+    // ─────────────────────────────────────────────
+    // Create group
+    // ─────────────────────────────────────────────
+    const createGroup = async (e) => {
+        e.preventDefault();
+        if (!groupName.trim()) return;
+        try {
+            await axios.post(`${API}/chat/groups`, {
+                name: groupName,
+                description: groupDesc,
+                memberIds: groupMembers.map(m => m._id)
+            }, { headers });
+            toast.success(`#${groupName} created!`);
+            setGroupName(''); setGroupDesc(''); setGroupMembers([]);
+            setView('chats');
+            fetchConversations();
+        } catch { toast.error('Failed to create group'); }
+    };
+
+    // ─────────────────────────────────────────────
+    // File upload
+    // ─────────────────────────────────────────────
+    const handleFile = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        const formData = new FormData();
-        formData.append('file', file);
-
         setUploading(true);
-        const loadingToast = toast.loading('Uploading attachment...');
-
+        const fd = new FormData();
+        fd.append('file', file);
         try {
-            const res = await axios.post('http://localhost:2000/community/upload', formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
+            const res = await axios.post(`${API}/chat/upload`, fd, {
+                headers: { ...headers, 'Content-Type': 'multipart/form-data' }
             });
-
             setAttachments(prev => [...prev, res.data]);
-            toast.success('Attached!', { id: loadingToast });
-        } catch (error) {
-            console.error('Upload Error:', error);
-            toast.error('Upload failed', { id: loadingToast });
-        } finally {
-            setUploading(false);
-            e.target.value = null; // Reset input
-        }
+        } catch { toast.error('Upload failed'); }
+        finally { setUploading(false); e.target.value = null; }
     };
 
-    const removeAttachment = (index) => {
-        setAttachments(prev => prev.filter((_, i) => i !== index));
+    // ─────────────────────────────────────────────
+    // Initiate call
+    // ─────────────────────────────────────────────
+    const startCall = (targetUser, callType) => {
+        initiateCall(targetUser, callType, false);
+    };
+ 
+    const startGroupCall = (conv, callType) => {
+        const memberIds = (conv.members || [])
+            .map(m => m._id || m)
+            .filter(id => String(id) !== String(user?._id));
+        if (memberIds.length === 0) return toast.error('No other members in group');
+        
+        initiateCall({ ...conv, memberIds }, callType, true);
     };
 
-    const handlePost = async (e) => {
-        e.preventDefault();
-        if (!content.trim() && attachments.length === 0) return;
-
-        try {
-            await axios.post('http://localhost:2000/community/create', {
-                content,
-                attachments
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            // Post is added via socket event to avoid duplication if we added it manually too
-            // But for immediate UX we might want to, but socket is fast enough locally.
-            setContent('');
-            setAttachments([]);
-        } catch (error) {
-            toast.error('Failed to post');
-        }
+    // ─────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────
+    const convName = (c) => c.type === 'dm' ? c.name.replace(/^DM:\s*/, '').trim() : c.name;
+    const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
+    const formatTime = d => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const formatDay = d => {
+        const dt = new Date(d); const today = new Date();
+        if (dt.toDateString() === today.toDateString()) return 'Today';
+        if ((today - dt) < 172800000) return 'Yesterday';
+        return dt.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
     };
 
-    const handleLike = async (postId) => {
-        try {
-            // Optimistic update
-            setPosts(prev => prev.map(p => {
-                if (p._id === postId) {
-                    const isLiked = p.likes.includes(user._id);
-                    return {
-                        ...p,
-                        likes: isLiked ? p.likes.filter(id => id !== user._id) : [...p.likes, user._id]
-                    };
-                }
-                return p;
-            }));
+    const groupedMsgs = messages.reduce((acc, m) => {
+        const d = formatDay(m.createdAt);
+        if (!acc[d]) acc[d] = [];
+        acc[d].push(m);
+        return acc;
+    }, {});
 
-            await axios.post('http://localhost:2000/community/like', { postId }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-        } catch (error) {
-            console.error('Like error', error);
-        }
-    };
+    const filteredConvs = conversations.filter(c =>
+        convName(c).toLowerCase().includes(search.toLowerCase())
+    );
+
+    const staffSearch = search && view === 'newchat'
+        ? staff.filter(s => s.fullName?.toLowerCase().includes(search.toLowerCase()))
+        : staff;
+
+    // Staff for group-call — find DM target contact
+    const dmTarget = activeConv?.type === 'dm'
+        ? staff.find(s => convName(activeConv).toLowerCase().includes(s.fullName?.toLowerCase().split(' ')[0]?.toLowerCase()))
+        : null;
 
     return (
         <Layout>
-            <div className="max-w-3xl mx-auto pb-20">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Staff Community</h1>
-                    <p className="text-gray-500">Share updates, resources, and connect with your colleagues.</p>
-                </div>
+            <div className="flex h-[calc(100vh-90px)] overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 bg-white">
 
-                {/* Create Post Card */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-8">
-                    <div className="flex gap-4">
-                        <img
-                            src={user.profilePicture || `https://ui-avatars.com/api/?name=${user.fullName}&background=random`}
-                            alt="User"
-                            className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <div className="flex-1">
-                            <textarea
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder={`What's on your mind, ${user.fullName.split(' ')[0]}?`}
-                                className="w-full border-none focus:ring-0 resize-none text-gray-700 placeholder-gray-400 text-lg min-h-[100px]"
-                            />
+                {/* ════════════════════════════
+                        SIDEBAR
+                ════════════════════════════ */}
+                <aside className={`${mobileShowChat ? 'hidden md:flex' : 'flex'} w-full md:w-[340px] flex-shrink-0 flex-col bg-[#0F0D0A] border-r border-white/5`}>
 
-                            {/* Attachments Preview */}
+                    {/* Top */}
+                    <div className="px-5 pt-6 pb-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-white font-black text-xl uppercase italic tracking-tight">Staff Hub</h1>
+                                    {totalUnread > 0 && (
+                                        <span className="bg-[#D4AF37] text-[#1A120B] text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center">
+                                            {totalUnread > 99 ? '99+' : totalUnread}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <Shield size={9} className="text-[#D4AF37]" />
+                                    <span className="text-[#D4AF37]/40 text-[8px] font-black uppercase tracking-[0.3em]">End-to-End Encrypted</span>
+                                </div>
+                            </div>
+                            <div className="flex gap-1.5">
+                                <button onClick={() => { setView(v => v === 'newgroup' ? 'chats' : 'newgroup'); setSearch(''); }}
+                                    title="New Group"
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${view === 'newgroup' ? 'bg-[#D4AF37]/20 text-[#D4AF37]' : 'bg-white/5 text-white/40 hover:text-white'}`}>
+                                    <Users size={16} />
+                                </button>
+                                <button onClick={() => { setView(v => v === 'newchat' ? 'chats' : 'newchat'); setSearch(''); }}
+                                    title="New Message"
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${view === 'newchat' ? 'bg-[#D4AF37]/20 text-[#D4AF37]' : 'bg-white/5 text-white/40 hover:text-white'}`}>
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Search */}
+                        <div className="relative">
+                            <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
+                            <input type="text" placeholder={view === 'newchat' ? 'Search staff...' : 'Search conversations...'}
+                                value={search} onChange={e => setSearch(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/5 focus:border-[#D4AF37]/25 rounded-xl text-white text-xs font-medium placeholder:text-white/20 outline-none transition-all" />
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-0.5">
+
+                        {/* ── New Group ── */}
+                        {view === 'newgroup' && (
+                            <form onSubmit={createGroup} className="p-3 space-y-3">
+                                <p className="text-[9px] font-black text-white/25 uppercase tracking-widest px-2">Create Group</p>
+                                <div className="flex items-center gap-2.5 bg-white/5 border border-white/8 focus-within:border-[#D4AF37]/25 rounded-xl px-3.5 py-2.5">
+                                    <Hash size={13} className="text-white/30" />
+                                    <input type="text" value={groupName} onChange={e => setGroupName(e.target.value)}
+                                        placeholder="Group name..." required
+                                        className="bg-transparent flex-1 outline-none text-sm font-bold text-white placeholder:text-white/20" />
+                                </div>
+                                <input type="text" value={groupDesc} onChange={e => setGroupDesc(e.target.value)}
+                                    placeholder="Description (optional)"
+                                    className="w-full px-3.5 py-2.5 bg-white/5 border border-white/8 rounded-xl text-xs text-white placeholder:text-white/20 outline-none" />
+                                <p className="text-[9px] font-black text-white/25 uppercase tracking-widest px-2 pt-1">Add Members</p>
+                                <div className="max-h-48 overflow-y-auto space-y-1">
+                                    {staff.map(s => {
+                                        const sel = groupMembers.some(m => m._id === s._id);
+                                        return (
+                                            <button key={s._id} type="button"
+                                                onClick={() => setGroupMembers(prev => sel ? prev.filter(m => m._id !== s._id) : [...prev, s])}
+                                                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all border ${sel ? 'bg-[#D4AF37]/10 border-[#D4AF37]/20' : 'bg-white/3 border-transparent hover:bg-white/5'}`}>
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${sel ? 'bg-[#D4AF37] text-[#1A120B]' : 'bg-white/10 text-white/60'}`}>
+                                                    {s.fullName?.charAt(0)}
+                                                </div>
+                                                <div className="flex-1 text-left min-w-0">
+                                                    <p className={`text-xs font-black truncate ${sel ? 'text-[#D4AF37]' : 'text-white/60'}`}>{s.fullName}</p>
+                                                    <p className="text-[9px] text-white/25 capitalize">{s.role?.replace('_', ' ')}</p>
+                                                </div>
+                                                {sel && <Check size={13} className="text-[#D4AF37] flex-shrink-0" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <button type="submit" className="w-full py-3 bg-[#D4AF37] rounded-xl text-[#1A120B] font-black text-xs uppercase tracking-widest hover:bg-[#c9a427] transition-all">
+                                    Create Group · {groupMembers.length} selected
+                                </button>
+                            </form>
+                        )}
+
+                        {/* ── New Chat (Staff Directory) ── */}
+                        {view === 'newchat' && (
+                            <div>
+                                <p className="text-[9px] font-black text-white/25 uppercase tracking-widest px-5 py-2">Faculty</p>
+                                {staffSearch.map(s => (
+                                    <button key={s._id} onClick={() => { startDM(s); setView('chats'); }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all group">
+                                        <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] font-black text-lg flex-shrink-0">
+                                            {s.fullName?.charAt(0)}
+                                        </div>
+                                        <div className="text-left flex-1 min-w-0">
+                                            <p className="text-white text-sm font-black uppercase italic truncate">{s.fullName}</p>
+                                            <p className="text-white/30 text-[10px] font-bold capitalize">{s.role?.replace('_', ' ')}</p>
+                                            {/* Subjects & class */}
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {s.info?.classLevel && (
+                                                    <span className="text-[8px] font-black text-emerald-400/70 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                                                        {s.info.classLevel}
+                                                    </span>
+                                                )}
+                                                {(s.info?.subjects || []).slice(0, 2).map(sub => (
+                                                    <span key={sub} className="text-[8px] font-black text-[#D4AF37]/60 bg-[#D4AF37]/10 px-1.5 py-0.5 rounded-md">
+                                                        {sub}
+                                                    </span>
+                                                ))}
+                                                {(s.info?.subjects?.length || 0) > 2 && (
+                                                    <span className="text-[8px] text-white/20">+{s.info.subjects.length - 2}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* Quick call buttons */}
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
+                                            <button onMouseDown={e => { e.stopPropagation(); startCall(s, 'voice'); }}
+                                                className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center" title="Voice call">
+                                                <Phone size={13} />
+                                            </button>
+                                            <button onMouseDown={e => { e.stopPropagation(); startCall(s, 'video'); }}
+                                                className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center justify-center" title="Video call">
+                                                <Video size={13} />
+                                            </button>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* ── Conversations List ── */}
+                        {view === 'chats' && (
+                            <>
+                                {filteredConvs.length === 0 ? (
+                                    <div className="py-16 text-center space-y-3">
+                                        <MessageSquare size={28} className="text-white/10 mx-auto" />
+                                        <p className="text-white/20 text-xs font-bold">No conversations yet</p>
+                                        <button onClick={() => setView('newchat')}
+                                            className="text-[#D4AF37]/60 text-[10px] font-black uppercase hover:text-[#D4AF37]">
+                                            Start one →
+                                        </button>
+                                    </div>
+                                ) : filteredConvs.map(conv => {
+                                    const isAct = activeConv?._id === conv._id;
+                                    const unread = unreadMap[conv._id] || 0;
+                                    return (
+                                        <button key={conv._id} onClick={() => openConversation(conv)}
+                                            className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl transition-all text-left ${isAct ? 'bg-[#D4AF37]/10' : 'hover:bg-white/4'}`}>
+                                            {/* Icon */}
+                                            <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-black text-base border ${
+                                                conv.type === 'dm' ? 'bg-blue-500/10 border-blue-500/20 text-blue-300'
+                                                : conv.type === 'general' ? 'bg-emerald-500/10 border-emerald-500/20 text-xl'
+                                                : `bg-[#D4AF37]/10 border-[#D4AF37]/20 text-[#D4AF37]`
+                                            }`}>
+                                                {conv.type === 'general' ? '🌐' : conv.type === 'dm' ? convName(conv).charAt(0) : <Hash size={18} />}
+                                                {unread > 0 && (
+                                                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#D4AF37] text-[#1A120B] text-[8px] font-black rounded-full flex items-center justify-center">
+                                                        {unread > 9 ? '9+' : unread}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className={`text-sm font-black uppercase italic truncate ${isAct ? 'text-[#D4AF37]' : 'text-white'}`}>
+                                                        {convName(conv)}
+                                                    </p>
+                                                    {conv.lastMessageAt && (
+                                                        <span className="text-[9px] text-white/20 font-bold flex-shrink-0">{formatTime(conv.lastMessageAt)}</span>
+                                                    )}
+                                                </div>
+                                                {conv.lastMessage ? (
+                                                    <p className={`text-[11px] truncate mt-0.5 ${unread > 0 ? 'text-[#D4AF37]/80 font-bold' : 'text-white/25 font-medium'}`}>
+                                                        {conv.lastMessageBy ? `${conv.lastMessageBy.split(' ')[0]}: ` : ''}{conv.lastMessage}
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-[10px] text-white/15 italic mt-0.5">No messages yet</p>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </>
+                        )}
+                    </div>
+
+                    {/* Me bar */}
+                    <div className="px-4 py-3.5 border-t border-white/5 flex items-center gap-3">
+                        <div className="relative">
+                            <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 border-2 border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] font-black text-base">
+                                {user?.fullName?.charAt(0)}
+                            </div>
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#0F0D0A]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-white text-xs font-black uppercase italic truncate">{user?.fullName}</p>
+                            <p className="text-[9px] text-white/25 font-bold capitalize">{user?.role?.replace('_', ' ')}</p>
+                        </div>
+                        <Shield size={13} className="text-[#D4AF37]/25" />
+                    </div>
+                </aside>
+
+                {/* ════════════════════════════
+                        CHAT AREA
+                ════════════════════════════ */}
+                <main className={`${mobileShowChat ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-[#FAFAF8] min-w-0`}>
+
+                    {activeConv ? (
+                        <>
+                            {/* Header */}
+                            <header className="flex items-center gap-4 px-6 py-4 bg-white border-b border-slate-50/80 flex-shrink-0 shadow-sm">
+                                <button className="md:hidden p-2 -ml-1 rounded-xl hover:bg-slate-50 text-slate-400"
+                                    onClick={() => setMobileShowChat(false)}>
+                                    <ArrowLeft size={20} />
+                                </button>
+
+                                {/* Avatar */}
+                                <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-xl font-black border-2 ${
+                                    activeConv.type === 'dm' ? 'bg-blue-50 text-blue-500 border-blue-100'
+                                    : activeConv.type === 'general' ? 'bg-emerald-50 border-emerald-100'
+                                    : 'bg-[#1A120B] text-[#D4AF37] border-[#D4AF37]/20'
+                                }`}>
+                                    {activeConv.type === 'general' ? '🌐'
+                                     : activeConv.type === 'dm' ? convName(activeConv).charAt(0)
+                                     : <Hash size={20} />}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <h2 className="font-black text-[#1A120B] uppercase italic tracking-tight truncate text-lg">{convName(activeConv)}</h2>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                                            {activeConv.type === 'general' ? 'All Staff · Active'
+                                             : activeConv.type === 'dm' ? 'Direct Message · Online'
+                                             : `${activeConv.members?.length || 0} Members`}
+                                        </p>
+                                        <Lock size={9} className="text-[#D4AF37]" />
+                                    </div>
+                                    {/* DM target info - show subjects/class */}
+                                    {activeConv.type === 'dm' && dmTarget?.info && (
+                                        <div className="flex items-center gap-2 mt-1">
+                                            {dmTarget.info.classLevel && (
+                                                <span className="text-[8px] font-black text-emerald-500 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                                                    <BookOpen size={7} className="inline mr-0.5" />{dmTarget.info.classLevel}
+                                                </span>
+                                            )}
+                                            {(dmTarget.info.subjects || []).map(sub => (
+                                                <span key={sub} className="text-[8px] font-black text-[#a87e2a] bg-[#D4AF37]/10 border border-[#D4AF37]/15 px-2 py-0.5 rounded-full">{sub}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Call buttons */}
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    {activeConv.type === 'dm' && dmTarget && (
+                                        <>
+                                            <button onClick={() => startCall(dmTarget, 'voice')}
+                                                className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 hover:bg-emerald-100 transition-all flex items-center justify-center" title="Voice call">
+                                                <Phone size={18} />
+                                            </button>
+                                            <button onClick={() => startCall(dmTarget, 'video')}
+                                                className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 hover:bg-blue-100 transition-all flex items-center justify-center" title="Video call">
+                                                <Video size={18} />
+                                            </button>
+                                        </>
+                                    )}
+                                    {(activeConv.type === 'group' || activeConv.type === 'general') && (
+                                        <>
+                                            <button onClick={() => startGroupCall(activeConv, 'voice')}
+                                                className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 hover:bg-emerald-100 transition-all flex items-center justify-center" title="Group voice call">
+                                                <Phone size={18} />
+                                            </button>
+                                            <button onClick={() => startGroupCall(activeConv, 'video')}
+                                                className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 hover:bg-blue-100 transition-all flex items-center justify-center" title="Group video call">
+                                                <Video size={18} />
+                                            </button>
+                                        </>
+                                    )}
+                                    <button className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:bg-slate-100 transition-all flex items-center justify-center">
+                                        <MoreVertical size={18} />
+                                    </button>
+                                </div>
+                            </header>
+
+                            {/* Messages */}
+                            <div className="flex-1 overflow-y-auto px-6 py-6"
+                                style={{ backgroundImage: 'radial-gradient(circle, #e0dcd6 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+                                {loadingMsgs ? (
+                                    <div className="flex justify-center py-20">
+                                        <div className="w-10 h-10 border-4 border-[#D4AF37]/15 border-t-[#D4AF37] rounded-full animate-spin" />
+                                    </div>
+                                ) : messages.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-center gap-4">
+                                        <div className="w-20 h-20 rounded-[2rem] bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                                            <Lock size={28} className="text-[#D4AF37]" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-black text-[#1A120B] uppercase italic">Encrypted Chat</h3>
+                                            <p className="text-slate-400 text-sm mt-1">Messages are secured with AES-256 encryption.</p>
+                                            <p className="text-slate-300 text-xs mt-1">Be the first to say hi! 👋</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-8">
+                                        {Object.entries(groupedMsgs).map(([day, dayMsgs]) => (
+                                            <div key={day}>
+                                                {/* Date separator */}
+                                                <div className="flex items-center gap-4 mb-6">
+                                                    <div className="h-px flex-1 bg-slate-200/60" />
+                                                    <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest bg-white/90 rounded-full px-4 py-1.5 border border-slate-100 shadow-sm">{day}</span>
+                                                    <div className="h-px flex-1 bg-slate-200/60" />
+                                                </div>
+
+                                                <div className="space-y-1.5">
+                                                    {dayMsgs.map((msg, i) => {
+                                                        const isMe = String(msg.senderId) === String(user?._id);
+                                                        const prev = dayMsgs[i - 1];
+                                                        const isCont = prev && String(prev.senderId) === String(msg.senderId);
+                                                        return (
+                                                            <div key={msg._id || i}
+                                                                className={`flex items-end gap-2.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                                                {/* Avatar */}
+                                                                {!isMe && (
+                                                                    isCont
+                                                                        ? <div className="w-8 flex-shrink-0" />
+                                                                        : <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-black flex-shrink-0">
+                                                                            {msg.senderName?.charAt(0)}
+                                                                          </div>
+                                                                )}
+
+                                                                <div className={`flex flex-col max-w-[65%] ${isMe ? 'items-end' : 'items-start'}`}>
+                                                                    {/* Sender name */}
+                                                                    {!isMe && !isCont && activeConv.type !== 'dm' && (
+                                                                        <p className="text-[9px] font-black text-slate-500 uppercase pl-1 mb-0.5">{msg.senderName}</p>
+                                                                    )}
+                                                                    {/* Bubble */}
+                                                                    {msg.content && (
+                                                                        <div className={`px-4 py-2.5 text-sm leading-relaxed font-medium break-all shadow-sm ${
+                                                                            isMe
+                                                                                ? 'bg-[#1A120B] text-white rounded-[1.3rem] rounded-br-sm'
+                                                                                : 'bg-white text-[#1A120B] border border-slate-100 rounded-[1.3rem] rounded-bl-sm'
+                                                                        }`}>
+                                                                            {msg.content}
+                                                                        </div>
+                                                                    )}
+                                                                    {/* Attachments */}
+                                                                    {msg.attachments?.map((att, ai) =>
+                                                                        att.type === 'image' ? (
+                                                                            <img key={ai} src={att.url} alt={att.name}
+                                                                                className="mt-1.5 max-w-[260px] rounded-2xl border border-slate-100 shadow-sm object-cover cursor-pointer"
+                                                                                onClick={() => window.open(att.url)} />
+                                                                        ) : (
+                                                                            <a key={ai} href={att.url} target="_blank" rel="noreferrer"
+                                                                                className="mt-1.5 flex items-center gap-2.5 px-4 py-2.5 bg-white border border-slate-100 rounded-2xl hover:border-[#D4AF37]/30 transition-all shadow-sm">
+                                                                                <FileText size={15} className="text-[#D4AF37]" />
+                                                                                <span className="text-xs font-bold text-[#1A120B] truncate max-w-[140px]">{att.name}</span>
+                                                                            </a>
+                                                                        )
+                                                                    )}
+                                                                    {/* Time + ticks */}
+                                                                    <div className={`flex items-center gap-1 mt-1 px-1 ${isMe ? 'flex-row-reverse' : ''}`}>
+                                                                        <span className="text-[9px] text-slate-300 font-medium">{formatTime(msg.createdAt)}</span>
+                                                                        {isMe && <CheckCheck size={11} className="text-[#D4AF37]" />}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div ref={msgEndRef} />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Attachment previews */}
                             {attachments.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {attachments.map((file, idx) => (
-                                        <div key={idx} className="relative group bg-gray-50 border border-gray-200 rounded-lg p-2 pr-8 flex items-center gap-2">
-                                            {file.type === 'image' ? <Image size={16} className="text-blue-500" /> :
-                                                file.type === 'video' ? <Video size={16} className="text-purple-500" /> :
-                                                    <FileText size={16} className="text-orange-500" />}
-                                            <span className="text-xs font-medium truncate max-w-[150px]">{file.name || 'Attachment'}</span>
-                                            <button
-                                                onClick={() => removeAttachment(idx)}
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 p-1"
-                                            >
-                                                <X size={14} />
+                                <div className="flex gap-2 flex-wrap px-6 py-2 bg-white border-t border-slate-50">
+                                    {attachments.map((att, i) => (
+                                        <div key={i} className="flex items-center gap-2 bg-[#D4AF37]/5 border border-[#D4AF37]/15 rounded-xl px-3 py-1.5">
+                                            <FileText size={11} className="text-[#D4AF37]" />
+                                            <span className="text-xs font-bold text-[#1A120B] max-w-[120px] truncate">{att.name}</span>
+                                            <button onClick={() => setAttachments(p => p.filter((_, j) => j !== i))}>
+                                                <X size={11} className="text-slate-400 hover:text-rose-500" />
                                             </button>
                                         </div>
                                     ))}
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => fileInputRef.current?.click()} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors flex items-center gap-2" title="Attach File">
-                                        <Paperclip size={20} />
-                                        <span className="text-sm font-medium hidden md:inline">Attach</span>
+                            {/* Input bar */}
+                            <div className="px-6 py-4 bg-white border-t border-slate-50 flex-shrink-0 relative">
+                                <form onSubmit={sendMessage} className="flex items-center gap-3">
+                                    <input type="file" ref={fileRef} onChange={handleFile} className="hidden" />
+                                    <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+                                        className="w-11 h-11 rounded-full bg-slate-50 border border-slate-100 text-slate-400 hover:text-[#D4AF37] hover:border-[#D4AF37]/25 transition-all flex items-center justify-center flex-shrink-0">
+                                        {uploading ? <div className="w-4 h-4 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin" /> : <Paperclip size={18} />}
                                     </button>
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleFileUpload}
-                                        className="hidden"
-                                    />
-                                </div>
-                                <button
-                                    onClick={handlePost}
-                                    disabled={(!content.trim() && attachments.length === 0) || uploading}
-                                    className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    <Send size={18} /> Post
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Feed */}
-                <div className="space-y-6">
-                    {posts.map((post) => (
-                        <div key={post._id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-                            <div className="p-4 flex gap-3">
-                                <img
-                                    src={post.senderAvatar || `https://ui-avatars.com/api/?name=${post.senderName}&background=random`}
-                                    alt={post.senderName}
-                                    className="w-10 h-10 rounded-full object-cover"
-                                />
-                                <div className="flex-1">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <div>
-                                            <h3 className="font-bold text-gray-900">{post.senderName}</h3>
-                                            <p className="text-xs text-indigo-600 font-medium uppercase tracking-wide">{post.senderRole === 'school_admin' ? 'Admin' : 'Teacher'}</p>
-                                        </div>
-                                        <span className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleDateString()}</span>
-                                    </div>
-
-                                    <p className="text-gray-800 whitespace-pre-wrap mb-4">{post.content}</p>
-
-                                    {/* Attachments Display */}
-                                    {post.attachments && post.attachments.length > 0 && (
-                                        <div className="grid grid-cols-2 gap-2 mb-4">
-                                            {post.attachments.map((att, i) => (
-                                                <div key={i} className="rounded-xl overflow-hidden border border-gray-200">
-                                                    {att.type === 'image' ? (
-                                                        <img src={att.url} alt="Attachment" className="w-full h-48 object-cover hover:scale-105 transition-transform cursor-pointer" onClick={() => window.open(att.url)} />
-                                                    ) : att.type === 'video' ? (
-                                                        <video src={att.url} controls className="w-full h-48 object-cover bg-black" />
-                                                    ) : (
-                                                        <div className="p-4 flex items-center gap-3 bg-gray-50 h-full cursor-pointer hover:bg-gray-100" onClick={() => window.open(att.url)}>
-                                                            <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg">
-                                                                <FileText size={24} />
-                                                            </div>
-                                                            <div className="overflow-hidden">
-                                                                <p className="font-medium text-sm truncate">{att.name || 'Document'}</p>
-                                                                <p className="text-xs text-gray-500">Click to view</p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center gap-6 pt-3 border-t border-gray-50">
-                                        <button
-                                            onClick={() => handleLike(post._id)}
-                                            className={`flex items-center gap-2 text-sm font-medium transition-colors ${post.likes.includes(user._id) ? 'text-red-500' : 'text-gray-500 hover:text-red-500'}`}
-                                        >
-                                            <Heart size={18} fill={post.likes.includes(user._id) ? "currentColor" : "none"} />
-                                            {post.likes.length || 0}
-                                        </button>
-                                        <button className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
-                                            <MessageSquare size={18} /> Comment
+                                    <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-100 focus-within:bg-white focus-within:border-[#D4AF37]/25 rounded-full px-5 py-2.5 transition-all shadow-inner relative">
+                                        <input ref={inputRef} type="text" value={text}
+                                            onChange={e => setText(e.target.value)}
+                                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(e); }}
+                                            placeholder="Type a message…"
+                                            className="flex-1 bg-transparent outline-none text-sm text-[#1A120B] font-medium placeholder:text-slate-300" />
+                                        <button type="button" onClick={e => { e.stopPropagation(); setShowEmoji(v => !v); }}
+                                            className={`text-slate-300 hover:text-[#D4AF37] transition-colors ${showEmoji ? 'text-[#D4AF37]' : ''}`}>
+                                            <Smile size={18} />
                                         </button>
                                     </div>
+
+                                    <button type="submit" disabled={sending || (!text.trim() && attachments.length === 0)}
+                                        className="w-11 h-11 rounded-full bg-[#1A120B] text-[#D4AF37] hover:bg-black transition-all flex items-center justify-center flex-shrink-0 shadow-xl shadow-[#1A120B]/15 disabled:opacity-30 active:scale-95">
+                                        {sending ? <div className="w-4 h-4 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin" /> : <Send size={18} />}
+                                    </button>
+                                </form>
+
+                                {/* Emoji Picker */}
+                                {showEmoji && (
+                                    <div className="absolute bottom-20 right-6 z-50" onClick={e => e.stopPropagation()}>
+                                        <EmojiPicker
+                                            onEmojiClick={({ emoji }) => { setText(t => t + emoji); setShowEmoji(false); }}
+                                            height={380} width={320} theme="light"
+                                            searchDisabled={false} lazyLoadEmojis
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        /* Welcome screen */
+                        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-12"
+                            style={{ backgroundImage: 'radial-gradient(circle, #e0dcd6 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+                            <div className="w-28 h-28 rounded-[3rem] bg-white border-2 border-[#D4AF37]/20 flex items-center justify-center shadow-2xl shadow-[#D4AF37]/10">
+                                <Lock size={40} className="text-[#D4AF37]" />
+                            </div>
+                            <div className="text-center bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-100 shadow-xl max-w-sm">
+                                <h2 className="text-3xl font-black text-[#1A120B] uppercase italic tracking-tighter">Staff Hub</h2>
+                                <div className="flex items-center justify-center gap-2 mt-2">
+                                    <Shield size={11} className="text-[#D4AF37]" />
+                                    <p className="text-[#D4AF37] text-[10px] font-black uppercase tracking-widest">End-to-End Encrypted</p>
+                                </div>
+                                <p className="text-slate-400 text-sm mt-4 leading-relaxed">
+                                    Select a conversation or start a new chat with your colleagues.
+                                </p>
+                                <div className="flex gap-3 mt-6 justify-center">
+                                    <button onClick={() => setView('newchat')}
+                                        className="flex items-center gap-2 px-6 py-3 bg-[#1A120B] text-[#D4AF37] rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-black transition-all">
+                                        <MessageSquare size={13} /> Message
+                                    </button>
+                                    <button onClick={() => setView('newgroup')}
+                                        className="flex items-center gap-2 px-6 py-3 bg-[#D4AF37]/10 text-[#1A120B] border border-[#D4AF37]/20 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#D4AF37]/15 transition-all">
+                                        <Users size={13} /> New Group
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-
-                    {posts.length === 0 && (
-                        <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-3xl border border-dashed border-gray-300">
-                            <MessageSquare className="mx-auto text-gray-300 mb-3" size={48} />
-                            <p>No posts yet. Be the first to say hello!</p>
                         </div>
                     )}
-                </div>
+                </main>
             </div>
         </Layout>
     );
 };
 
 export default StaffCommunity;
-

@@ -1,20 +1,25 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // defaults to localStorage for web
+import storage from 'redux-persist/lib/storage';
 import authReducer from './authSlice';
+import chatReducer from './chatSlice';
+
+const rootReducer = combineReducers({
+    auth: authReducer,
+    chat: chatReducer,
+});
 
 const persistConfig = {
     key: 'root',
     storage,
     version: 1,
+    whitelist: ['auth', 'chat'] // Only persist these slices
 };
 
-const persistedReducer = persistReducer(persistConfig, authReducer);
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
-    reducer: {
-        auth: persistedReducer,
-    },
+    reducer: persistedReducer,
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
             serializableCheck: false,
