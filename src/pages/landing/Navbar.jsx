@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Menu as MenuIcon, X as XIcon, GraduationCap as GradIcon } from 'lucide-react';
 
 const navLinks = [
-    { id: 'features', label: 'Features' },
-    { id: 'subjects', label: 'Subjects' },
-    { id: 'how-it-works', label: 'How It Works' },
-    { id: 'gallery', label: 'Gallery' },
-    { id: 'testimonials', label: 'Reviews' },
-    { id: 'pricing', label: 'Pricing' },
-    { id: 'faq', label: 'FAQ' },
+    { id: 'features', label: 'Capabilities' },
+    { id: 'subjects', label: 'Verticals' },
+    { id: 'how-it-works', label: 'Workflow' },
+    { id: 'stats', label: 'Metrics' },
 ];
 
 export default function Navbar() {
@@ -24,92 +21,103 @@ export default function Navbar() {
     }, []);
 
     const scrollTo = (id) => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        } else if (id === 'hero') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         setMenuOpen(false);
     };
 
     return (
         <nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                    ? 'bg-slate-900/90 backdrop-blur-lg shadow-lg shadow-slate-900/30'
-                    : 'bg-transparent'
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
+                    ? 'bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm'
+                    : 'bg-transparent border-b border-transparent'
                 }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
+                <div className="flex items-center justify-between h-20 sm:h-24">
                     {/* Logo */}
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollTo('hero')}>
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                            <GraduationCap size={20} className="text-white" />
+                    <div className="flex items-center gap-4 cursor-pointer group" onClick={() => scrollTo('hero')}>
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#1a120b] flex items-center justify-center shadow-lg shadow-black/10 group-hover:scale-110 transition-transform duration-500">
+                            <GradIcon size={22} className="text-[#c5a059]" />
                         </div>
-                        <span className="text-white font-bold text-lg tracking-tight">
-                            EduCBT <span className="text-indigo-400">Pro</span>
-                        </span>
+                        <div className="flex flex-col">
+                            <span className="font-black text-lg sm:text-xl tracking-tighter leading-none text-[#1a150e] uppercase italic">
+                                KICC <span className="gold-text-gradient">CBT</span>
+                            </span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#c5a059]">Digital Registry</span>
+                        </div>
                     </div>
 
-                    {/* Desktop Nav */}
-                    <div className="hidden lg:flex items-center gap-6">
+                    {/* Desktop Navigation */}
+                    <div className="hidden lg:flex items-center gap-12">
                         {navLinks.map(({ id, label }) => (
                             <button
                                 key={id}
                                 onClick={() => scrollTo(id)}
-                                className="text-slate-300 hover:text-white text-sm font-medium transition-colors duration-200"
+                                className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1a150e]/60 hover:text-[#c5a059] transition-all relative group"
                             >
                                 {label}
+                                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-[#c5a059] transition-all duration-300 group-hover:w-full"></span>
                             </button>
                         ))}
                     </div>
 
-                    {/* CTA Buttons */}
-                    <div className="hidden md:flex items-center gap-3">
+                    {/* Authentication Actions */}
+                    <div className="hidden md:flex items-center gap-4">
                         <button
                             onClick={() => navigate('/login')}
-                            className="text-slate-300 hover:text-white text-sm font-medium transition-colors px-4 py-2"
+                            className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1a150e] px-6 py-3 rounded-xl hover:bg-slate-50 transition-all"
                         >
-                            Log In
+                            Portal Login
                         </button>
                         <button
                             onClick={() => navigate('/register-school')}
-                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold px-5 py-2 rounded-full shadow-md hover:shadow-indigo-500/30 transition-all duration-200"
+                            className="bg-[#1a120b] text-[#c5a059] text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3.5 rounded-xl hover:bg-black transition-all shadow-xl shadow-black/5 border border-[#c5a059]/10"
                         >
-                            Get Started Free
+                            Join Registry
                         </button>
                     </div>
 
                     {/* Mobile menu toggle */}
                     <button
-                        className="lg:hidden text-white p-2"
+                        className="lg:hidden p-3 rounded-2xl text-[#1a120b] bg-white border border-slate-100 shadow-sm transition-all active:scale-95"
                         onClick={() => setMenuOpen(!menuOpen)}
                     >
-                        {menuOpen ? <X size={24} /> : <Menu size={24} />}
+                        {menuOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
                     </button>
                 </div>
             </div>
 
-            {/* Mobile Menu */}
+            {/* Mobile Sidebar/Menu */}
             {menuOpen && (
-                <div className="lg:hidden bg-slate-900/95 backdrop-blur-lg border-t border-slate-700/50 px-4 py-4 space-y-1">
-                    {navLinks.map(({ id, label }) => (
-                        <button
-                            key={id}
-                            onClick={() => scrollTo(id)}
-                            className="block w-full text-left text-slate-300 hover:text-white text-sm font-medium py-2.5 transition-colors"
-                        >
-                            {label}
-                        </button>
-                    ))}
-                    <div className="pt-3 border-t border-slate-700/50 flex flex-col gap-2">
+                <div className="lg:hidden fixed inset-0 top-20 bg-white z-40 px-8 py-12 flex flex-col gap-10 animate-fade-in-up">
+                    <div className="flex flex-col gap-8">
+                        {navLinks.map(({ id, label }) => (
+                            <button
+                                key={id}
+                                onClick={() => scrollTo(id)}
+                                className="text-left text-[#1a150e] text-2xl font-black uppercase italic tracking-tight border-b border-slate-50 pb-4"
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="mt-auto flex flex-col gap-4">
                         <button
                             onClick={() => navigate('/login')}
-                            className="text-slate-300 hover:text-white text-sm font-medium text-left py-2 transition-colors"
+                            className="w-full text-[#1a150e] font-black uppercase tracking-widest py-5 rounded-3xl bg-slate-50 text-xs border border-slate-100"
                         >
-                            Log In
+                            Institutional Login
                         </button>
                         <button
                             onClick={() => navigate('/register-school')}
-                            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center"
+                            className="w-full bg-[#1a120b] text-[#c5a059] font-black uppercase tracking-widest py-5 rounded-3xl text-xs shadow-xl shadow-black/10"
                         >
-                            Get Started Free
+                            Open Free Registry
                         </button>
                     </div>
                 </div>

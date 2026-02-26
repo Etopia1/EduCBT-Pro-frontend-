@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, CheckCircle, BarChart2, Bell, Settings, LogOut, Menu, X, UserCheck, FileDown, BookOpen, Clock, Table, Users, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, CheckCircle, BarChart2, Bell, Settings, LogOut, Menu, X, UserCheck, BookOpen, Clock, Table, Users, ChevronRight, Activity } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import axios from 'axios';
@@ -19,7 +19,7 @@ const TeacherLayout = ({ children }) => {
 
     const fetchProfile = async () => {
         try {
-            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', {
+            const res = await axios.get('http://localhost:2000/school/teacher/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUser(res.data);
@@ -30,14 +30,13 @@ const TeacherLayout = ({ children }) => {
 
     const navLinks = [
         { path: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/teacher/tests', label: 'My Tests', icon: BookOpen },
-        { path: '/teacher/attendance', label: 'Student Attendance', icon: UserCheck },
+        { path: '/teacher/tests', label: 'My Exams', icon: BookOpen },
+        { path: '/teacher/grading', label: 'Grading', icon: CheckCircle },
+        { path: '/teacher/results', label: 'Results', icon: BarChart2 },
+        { path: '/teacher/attendance', label: 'Attendance', icon: UserCheck },
         { path: '/staff/attendance', label: 'Staff Attendance', icon: Clock },
-        { path: '/teacher/attendance-history', label: 'Past Records', icon: FileDown },
-        { path: '/teacher/results', label: 'Test Results', icon: BarChart2 },
         { path: '/teacher/student-records', label: 'Student Records', icon: Table },
-        { path: '/teacher/community', label: 'Staff Community', icon: Users },
-        { path: '/teacher/notifications', label: 'Notifications', icon: Bell },
+        { path: '/teacher/community', label: 'Community', icon: Users },
         { path: '/teacher/settings', label: 'Settings', icon: Settings },
     ];
 
@@ -46,51 +45,49 @@ const TeacherLayout = ({ children }) => {
         navigate('/login');
     };
 
-    const currentLabel = navLinks.find(i => location.pathname.startsWith(i.path))?.label || 'Dashboard';
+    const currentLabel = navLinks.find(i => location.pathname.startsWith(i.path))?.label || 'Overview';
 
     return (
-        <div className="min-h-screen bg-slate-950 flex font-sans text-slate-200 selection:bg-indigo-500/30">
-
-            {/* Mobile backdrop */}
+        <div className="min-h-screen bg-[#fcfbf9] flex font-outfit text-[#1a150e]">
+            {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+                    className="fixed inset-0 z-40 bg-[#1a150e]/60 backdrop-blur-sm md:hidden transition-opacity"
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}
 
-            {/* Sidebar */}
+            {/* Side Navigation */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-64 flex flex-col
-                bg-slate-900/80 backdrop-blur-xl border-r border-white/5
-                transform transition-transform duration-300 ease-in-out
-                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-                md:relative md:translate-x-0
+                fixed inset-y-0 left-0 z-50 w-[280px] flex flex-col
+                bg-white border-r border-slate-50 shadow-[20px_0_60px_-15px_rgba(0,0,0,0.03)]
+                transform transition-all duration-500 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}>
-                {/* School Logo Section */}
-                <div className="p-6 border-b border-white/5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center border border-indigo-500/30 overflow-hidden shrink-0">
+                {/* Branding Section */}
+                <div className="p-8 border-b border-slate-50 relative group">
+                    <div className="flex items-center gap-4">
+                        <div className="w-11 h-11 rounded-2xl bg-[#1a120b] flex items-center justify-center border border-[#c5a059]/10 shadow-xl overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-500">
                             {user?.schoolLogo ? (
                                 <img src={user.schoolLogo} alt="Logo" className="w-full h-full object-cover" />
                             ) : (
-                                <BookOpen className="text-indigo-400" size={20} />
+                                <Activity size={20} className="text-[#c5a059]" />
                             )}
                         </div>
                         <div className="min-w-0">
-                            <h2 className="text-sm font-black text-white truncate uppercase tracking-tighter italic">
-                                {user?.schoolName || 'CBT System'}
+                            <h2 className="text-[15px] font-black text-[#1a150e] truncate uppercase tracking-tighter italic leading-none mb-1.5">
+                                {user?.schoolName || 'KICC CBT'}
                             </h2>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Faculty Portal</span>
+                            <span className="text-[9px] font-black text-[#c5a059] uppercase tracking-[0.3em]">Digital faculty</span>
                         </div>
                     </div>
-                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white absolute top-4 right-4">
+                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden absolute top-8 right-6 text-slate-300 hover:text-rose-500 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Navigation Links */}
-                <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
+                {/* Primary Links */}
+                <nav className="flex-1 overflow-y-auto p-4 space-y-1 mt-4 custom-scrollbar">
                     {navLinks.map((link) => {
                         const Icon = link.icon;
                         const isActive = location.pathname === link.path;
@@ -99,70 +96,80 @@ const TeacherLayout = ({ children }) => {
                                 key={link.path}
                                 to={link.path}
                                 onClick={() => setIsSidebarOpen(false)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all relative group ${isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}`}
+                                className={`
+                                    flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black tracking-[0.1em] transition-all relative group uppercase italic
+                                    ${isActive 
+                                        ? 'bg-[#1a120b] text-[#c5a059] shadow-2xl shadow-black/10' 
+                                        : 'text-slate-400 hover:bg-slate-50 hover:text-[#1a150e]'}
+                                `}
                             >
-                                <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-indigo-400'} />
+                                <Icon size={18} className={`${isActive ? 'text-[#c5a059]' : 'text-slate-300 group-hover:text-[#c5a059]'} transition-colors duration-300`} />
                                 {link.label}
-                                {isActive && <div className="absolute right-2 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_white]" />}
+                                {isActive && (
+                                    <div className="absolute right-4 w-1.5 h-1.5 bg-[#c5a059] rounded-full shadow-[0_0_12px_#c5a059]" />
+                                )}
                             </Link>
                         );
                     })}
                 </nav>
 
-                {/* User Footer */}
-                <div className="p-4 border-t border-white/5 bg-slate-900/40">
-                    <div className="flex items-center gap-3 mb-4 px-2">
-                        <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                {/* Identity Module */}
+                <div className="p-6 border-t border-slate-50 bg-[#fcfbf9]/50 space-y-6">
+                    <div className="flex items-center gap-4 px-2">
+                        <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-sm relative group cursor-pointer transition-transform hover:scale-110">
                             {user?.profilePicture ? (
-                                <img src={user.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                                <img src={user.profilePicture} alt="Profile" className="w-full h-full object-cover rounded-2xl" />
                             ) : (
-                                <span className="text-sm font-black text-indigo-400 italic">{user?.fullName?.charAt(0) || 'T'}</span>
+                                <span className="text-[12px] font-black text-[#c5a059] uppercase italic">{user?.fullName?.charAt(0) || 'T'}</span>
                             )}
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-sm" />
                         </div>
                         <div className="min-w-0">
-                            <p className="text-sm font-black text-white truncate italic leading-none mb-1">{user?.fullName || 'Teacher'}</p>
-                            <p className="text-[10px] text-slate-500 truncate font-medium uppercase tracking-widest">
-                                {user?.subscription?.canMonitor ? '✨ Premium Active' : 'Basic Member'}
+                            <p className="text-[12px] font-black text-[#1a150e] truncate uppercase italic leading-none mb-1.5">{user?.fullName || 'Teacher'}</p>
+                            <p className="text-[8px] font-black text-[#c5a059]/60 uppercase tracking-widest bg-[#c5a059]/5 px-2 py-0.5 rounded-lg border border-[#c5a059]/10">
+                                Faculty active
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl transition-all text-xs font-black uppercase tracking-widest border border-rose-500/20"
+                        className="flex items-center justify-center gap-3 w-full h-14 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-[1.25rem] transition-all text-[10px] font-black uppercase tracking-[0.15em] border border-slate-100 hover:border-rose-500 shadow-sm group"
                     >
-                        <LogOut size={14} />
-                        Logout Session
+                        <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        Exit Session
                     </button>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-                <header className="sticky top-0 z-30 border-b border-white/5 bg-slate-900/60 backdrop-blur-xl px-5 py-3.5 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden text-slate-400 hover:text-white transition-colors p-1">
-                            <Menu size={22} />
+            {/* Global Interface */}
+            <div className="flex-1 flex flex-col min-h-screen overflow-hidden md:ml-[280px]">
+                <header className="sticky top-0 z-30 border-b border-slate-50 bg-white/70 backdrop-blur-2xl px-8 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden text-[#1a150e] hover:text-[#c5a059] transition-all p-1 active:scale-95">
+                            <Menu size={24} />
                         </button>
-                        {/* Breadcrumb */}
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="text-slate-500 hidden md:inline">Faculty</span>
-                            <ChevronRight size={14} className="text-slate-600 hidden md:inline" />
-                            <span className="text-slate-200 font-semibold">{currentLabel}</span>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden lg:flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                <Activity size={14} className="text-[#c5a059]/50" />
+                                <span>Academic Command</span>
+                                <ChevronRight size={12} className="text-slate-200" />
+                                <span className="text-[#1a150e] italic underline decoration-[#c5a059]/30 underline-offset-4 decoration-2">{currentLabel}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-full relative transition-colors">
-                            <Bell size={18} />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border border-slate-900"></span>
+                    <div className="flex items-center gap-6">
+                        <button className="w-11 h-11 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-[#c5a059] hover:border-[#c5a059]/20 transition-all relative shadow-sm group active:scale-95">
+                            <Bell size={20} className="group-hover:rotate-12 transition-transform" />
+                            <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-[#c5a059] rounded-full border-2 border-white animate-pulse"></span>
                         </button>
-                        <Link to="/teacher/tests/create" className="hidden sm:flex bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
-                            + Create Test
+                        <Link to="/teacher/tests/create" className="hidden sm:flex btn-primary h-11 px-6 rounded-xl shadow-lg shadow-black/5">
+                            + Initialize Script
                         </Link>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-auto p-4 md:p-8">
+                <main className="flex-1 overflow-auto p-4 md:p-10 lg:p-12 custom-scrollbar scroll-smooth font-outfit">
                     {children}
                 </main>
             </div>

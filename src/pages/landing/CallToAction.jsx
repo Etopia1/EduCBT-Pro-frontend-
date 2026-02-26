@@ -1,68 +1,60 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, PhoneCall } from 'lucide-react';
+import { ArrowRight, PhoneCall, Zap, ShieldCheck } from 'lucide-react';
 
 export default function CallToAction() {
     const navigate = useNavigate();
     return (
-        <section className="py-24 bg-slate-900 relative overflow-hidden">
-            {/* Background glows */}
-            <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 mb-6">
-                    <PhoneCall size={14} className="text-indigo-400" />
-                    <span className="text-indigo-300 text-sm font-medium">Ready to Get Started?</span>
+        <section className="py-32 bg-[#fcfbf9] relative overflow-hidden font-outfit">
+            {/* Background Texture */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+                style={{ 
+                    backgroundImage: 'radial-gradient(#1a120b 1px, transparent 1px)', 
+                    backgroundSize: '40px 40px' 
+                }} 
+            />
+            
+            <div className="max-w-6xl mx-auto px-6 text-center relative z-10">
+                <div className="inline-flex items-center gap-3 bg-white border border-slate-100 rounded-full px-5 py-2.5 mb-10 shadow-sm animate-fade-in-up">
+                    <ShieldCheck size={16} className="text-[#c5a059]" />
+                    <span className="text-[#1a120b] text-[10px] font-black uppercase tracking-[0.25em]">Institutional Integrity Protocol</span>
                 </div>
 
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
-                    Transform How Your{' '}
-                    <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                        School Conducts Exams
+                <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-[#1a150e] mb-10 leading-[0.9] italic uppercase tracking-tighter animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                    Elevate Your <br />
+                    <span className="gold-text-gradient">
+                        Academic Standard
                     </span>
                 </h2>
 
-                <p className="text-slate-300 text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
-                    Join hundreds of Nigerian secondary schools already running secure, stress-free 
-                    CBT exams with EduCBT Pro. Setup takes less than 10 minutes.
+                <p className="text-slate-500 text-lg md:text-xl mb-16 max-w-2xl mx-auto font-medium leading-relaxed italic animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                    Join elite secondary schools leveraging high-fidelity assessment architecture. Initialize your institutional registry node in 120 seconds.
                 </p>
 
-                {/* Student image strip */}
-                <div className="flex justify-center -space-x-3 mb-8">
-                    {[
-                        'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=80&q=80',
-                        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80',
-                        'https://images.unsplash.com/photo-1614624532983-4ce03382d63d?w=80&q=80',
-                        'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&q=80',
-                        'https://images.unsplash.com/photo-1556157382-97eda2d62296?w=80&q=80',
-                    ].map((src, i) => (
-                        <img
-                            key={i}
-                            src={src}
-                            alt="student"
-                            className="w-10 h-10 rounded-full border-2 border-slate-800 object-cover"
-                        />
-                    ))}
-                    <div className="w-10 h-10 rounded-full border-2 border-slate-800 bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                        +2k
-                    </div>
-                </div>
-                <p className="text-slate-400 text-sm mb-10">Trusted by 2,000+ students across Nigeria</p>
-
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                     <button
                         onClick={() => navigate('/register-school')}
-                        className="group flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold px-10 py-4 rounded-full shadow-2xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all duration-300 text-base"
+                        className="btn-gold group min-w-[280px] h-16 rounded-2xl flex items-center justify-center gap-4 text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#c5a059]/30"
                     >
-                        Register Your School Free
-                        <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                        Initialize Identity
+                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                     <button
                         onClick={() => navigate('/login')}
-                        className="text-slate-300 hover:text-white font-medium px-8 py-4 rounded-full border border-slate-700 hover:border-slate-500 transition-all duration-300 text-base"
+                        className="min-w-[280px] h-16 rounded-2xl border border-slate-200 bg-white text-slate-500 font-black text-[10px] uppercase tracking-[0.25em] hover:bg-[#1a120b] hover:text-[#c5a059] hover:border-[#1a120b] transition-all duration-500"
                     >
-                        Already have an account? Log In
+                        Access Command Hub
                     </button>
+                </div>
+
+                <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col items-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] italic mb-4">
+                        Powered by KICC CBT Excellence
+                    </p>
+                    <div className="flex gap-4">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#c5a059]/40" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#c5a059]/40" />
+                    </div>
                 </div>
             </div>
         </section>

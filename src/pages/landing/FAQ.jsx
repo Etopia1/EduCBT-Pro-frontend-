@@ -1,85 +1,100 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, HelpCircle, MessageCircle, ArrowRight } from 'lucide-react';
 
 const faqs = [
     {
-        q: 'Is EduCBT Pro suitable for Nigerian secondary schools (JSS & SSS)?',
-        a: "Absolutely. EduCBT Pro is built specifically for the Nigerian secondary school curriculum — covering JSS 1–3 and SSS 1–3 subjects, with question structures aligned to WAEC and NECO formats including objectives, theory, and practicals.",
+        q: 'Is KICC CBT aligned with WAEC/NECO standards?',
+        a: "Absolutely. Our platform is architected around the Nigerian secondary school curriculum, supporting specialized question formats like Theory, Objectives, and Math notations required for National Exams.",
     },
     {
-        q: 'How does the AI proctoring work?',
-        a: "When a student starts an exam, the system uses their device's camera to detect their face continuously. If the student looks away, switches tabs, or their face disappears from the frame, an alert is immediately sent to the supervising teacher's dashboard.",
+        q: 'How does the Surveillance AI function?',
+        a: "The Surveillance Hub utilizes high-fidelity face tracking and environmental monitoring. It detects tab switching, multiple persons, and audio patterns that deviate from standard exam room noise.",
     },
     {
-        q: 'Do students need to install any app?',
-        a: "No app download required! EduCBT Pro runs entirely in the browser on any device — desktops, laptops, Android phones, or tablets. Students just log in with their school credentials and start their exam.",
+        q: 'Is there a hardware installation requirement?',
+        a: "None. KICC CBT is a zero-footprint web application. It runs natively on any modern browser across Windows, Android, and iOS devices with full performance optimization.",
     },
     {
-        q: 'How quickly are results available after an exam?',
-        a: "Objective questions (MCQ) are graded instantly the moment a student submits. Teachers can view class-wide performance analytics within seconds of the last student finishing.",
+        q: 'How secure is the data lifecycle?',
+        a: "Every session is encrypted with institutional-grade 256-bit protocols. Results are vaulted in secure nodes and can only be accessed by verified institutional authorities.",
     },
     {
-        q: 'Can I import existing questions from Word or PDF?',
-        a: "Yes. Our Smart Exam Builder supports question import from structured Word documents and CSV files. You can also create a reusable question bank and pull randomized questions per student to reduce copying.",
+        q: 'Can we generate AI assessments in bulk?',
+        a: "Yes. Our Intelligence Engine can generate hundreds of high-quality, curriculumn-accurate questions in seconds based on specific subjects and topics.",
     },
     {
-        q: 'What internet speed is required for students to take exams?',
-        a: "EduCBT Pro is optimised for low-bandwidth environments. A stable 1Mbps connection is sufficient. For schools with unreliable internet, we offer an offline-cache mode that syncs automatically when connectivity returns.",
-    },
-    {
-        q: 'Can I customise the platform with my school name and logo?',
-        a: "Yes — all paid plans include custom school branding. Your school's name, logo, and colours will appear across student dashboards, exam covers, and PDF result reports.",
-    },
+        q: 'What happens during a network outage?',
+        a: "The system features 'Persistent Session Recovery'. If a student loses connection, their current progress is cached locally and synced automatically once the node regains connectivity.",
+    }
 ];
 
 export default function FAQ() {
-    const [open, setOpen] = useState(null);
+    const [open, setOpen] = useState(0);
 
     return (
-        <section id="faq" className="py-24 bg-slate-950 relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-14">
-                    <span className="inline-block text-indigo-400 text-sm font-semibold uppercase tracking-widest mb-3">
-                        Got Questions?
-                    </span>
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4">
-                        Frequently Asked Questions
-                    </h2>
-                    <p className="text-slate-400 text-lg">
-                        Everything you need to know about EduCBT Pro for your school.
-                    </p>
-                </div>
-
-                <div className="space-y-3">
-                    {faqs.map(({ q, a }, i) => (
-                        <div
-                            key={i}
-                            className={`border rounded-2xl overflow-hidden transition-all duration-300 ${
-                                open === i
-                                    ? 'border-indigo-500/50 bg-indigo-500/5'
-                                    : 'border-slate-700/50 bg-slate-800/30 hover:border-slate-600/70'
-                            }`}
-                        >
-                            <button
-                                className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
-                                onClick={() => setOpen(open === i ? null : i)}
-                            >
-                                <span className="text-white font-semibold text-base">{q}</span>
-                                <ChevronDown
-                                    size={20}
-                                    className={`text-indigo-400 shrink-0 transition-transform duration-300 ${
-                                        open === i ? 'rotate-180' : ''
-                                    }`}
-                                />
-                            </button>
-                            {open === i && (
-                                <div className="px-6 pb-5">
-                                    <p className="text-slate-400 text-sm leading-relaxed">{a}</p>
-                                </div>
-                            )}
+        <section id="faq" className="py-32 bg-[#FCFBFA] relative overflow-hidden font-outfit">
+            <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-[#c5a059]/5 blur-[120px] rounded-full" />
+            
+            <div className="max-w-5xl mx-auto px-6 relative z-10">
+                <div className="flex flex-col lg:flex-row gap-20 items-start">
+                    {/* Left side: Heading */}
+                    <div className="lg:w-1/3">
+                        <div className="inline-flex items-center gap-3 bg-white border border-slate-100 rounded-full px-5 py-2 mb-8 shadow-sm">
+                            <HelpCircle size={14} className="text-[#c5a059]" />
+                            <span className="text-[#a18146] text-[10px] font-black uppercase tracking-[0.2em]">Institutional Support</span>
                         </div>
-                    ))}
+                        <h2 className="text-4xl md:text-5xl font-black text-[#1a150e] leading-[1.1] italic uppercase tracking-tighter mb-8">
+                            Knowledge <span className="gold-text-gradient">Base</span>
+                        </h2>
+                        <p className="text-slate-500 text-sm font-medium leading-relaxed italic mb-10">
+                            Deep-dive into the technical and operational infrastructure of KICC CBT. For further inquiries, contact our Command Hub.
+                        </p>
+                        
+                        <div className="p-8 bg-[#1a120b] rounded-3xl border border-[#c5a059]/20 shadow-2xl relative overflow-hidden group">
+                           <div className="relative z-10">
+                                <p className="text-[#c5a059] text-[10px] font-black uppercase tracking-widest mb-2">Still Unclear?</p>
+                                <p className="text-white text-lg font-black italic uppercase tracking-tight mb-6">Talk to a Surveillance Expert</p>
+                                <button className="w-full py-4 bg-[#c5a059] text-[#1a120b] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2 group/btn">
+                                    Initialize Chat <MessageCircle size={16} className="group-hover/btn:rotate-12 transition-transform" />
+                                </button>
+                           </div>
+                           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-[#c5a059]/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                        </div>
+                    </div>
+
+                    {/* Right side: Questions */}
+                    <div className="lg:w-2/3 space-y-4 w-full">
+                        {faqs.map(({ q, a }, i) => (
+                            <div
+                                key={i}
+                                className={`group border-2 rounded-[2rem] transition-all duration-500 overflow-hidden ${
+                                    open === i
+                                        ? 'border-[#c5a059]/30 bg-white shadow-[0_30px_60px_-15px_rgba(197,160,89,0.08)] scale-[1.02]'
+                                        : 'border-slate-50 bg-[#fcfbf9]/50 hover:border-slate-100'
+                                }`}
+                            >
+                                <button
+                                    className="w-full flex items-center justify-between gap-6 px-10 py-8 text-left"
+                                    onClick={() => setOpen(open === i ? null : i)}
+                                >
+                                    <div className="flex items-center gap-6">
+                                        <span className={`text-sm font-black italic uppercase tracking-tighter transition-colors duration-500 ${open === i ? 'text-[#c5a059]' : 'text-slate-300 group-hover:text-slate-500'}`}>0{i+1}</span>
+                                        <span className={`text-base font-black italic uppercase tracking-tight transition-colors duration-500 ${open === i ? 'text-[#1a150e]' : 'text-slate-600 group-hover:text-[#1a150e]'}`}>{q}</span>
+                                    </div>
+                                    <div className={`p-2 rounded-xl transition-all duration-500 ${open === i ? 'bg-[#c5a059] text-[#1a120b] rotate-180' : 'bg-slate-100 text-slate-400 opacity-0 group-hover:opacity-100'}`}>
+                                        <ChevronDown size={18} />
+                                    </div>
+                                </button>
+                                {open === i && (
+                                    <div className="px-10 pb-8 ml-10">
+                                        <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-50">
+                                            <p className="text-slate-500 text-sm leading-relaxed font-bold italic">{a}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

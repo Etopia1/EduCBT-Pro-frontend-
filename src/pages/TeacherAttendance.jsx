@@ -42,7 +42,7 @@ const TeacherAttendance = () => {
 
     const fetchTeacherProfile = async () => {
         try {
-            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', {
+            const res = await axios.get('http://localhost:2000/school/teacher/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTeacherProfile(res.data);
@@ -53,7 +53,7 @@ const TeacherAttendance = () => {
 
     const fetchClassStudents = async () => {
         try {
-            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/class-students', {
+            const res = await axios.get('http://localhost:2000/school/teacher/class-students', {
                 headers: { Authorization: `Bearer ${token} ` }
             });
             setStudents(res.data);
@@ -67,7 +67,7 @@ const TeacherAttendance = () => {
 
     const fetchAttendanceForDate = async (date) => {
         try {
-            const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/teacher/attendance?date=${date}`, {
+            const res = await axios.get(`http://localhost:2000/school/teacher/attendance?date=${date}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -134,7 +134,7 @@ const TeacherAttendance = () => {
             const day = String(dateObj.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
 
-            await axios.post('https://educbt-pro-backend.onrender.com/school/teacher/attendance',
+            await axios.post('http://localhost:2000/school/teacher/attendance',
                 { date: dateStr, records, isLocked: shouldLock },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -307,7 +307,7 @@ const TeacherAttendance = () => {
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => handleSave(false)}
-                                            className="flex items-center gap-2 px-6 py-2.5 bg-slate-950/50 text-indigo-400 border border-white/5 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-slate-900 transition-all active:scale-95 shadow-inner"
+                                            className="flex items-center gap-2 px-6 py-2.5 bg-[#FCFBFA]/50 text-indigo-400 border border-white/5 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-slate-900 transition-all active:scale-95 shadow-inner"
                                         >
                                             <Save size={14} /> Save Draft
                                         </button>
@@ -413,7 +413,7 @@ const TeacherAttendance = () => {
                                                     <div className="text-[10px] font-bold text-indigo-400/60 uppercase mt-1 tracking-tighter">{getAge(student.info?.dateOfBirth)} Sol Cycle Age</div>
                                                 </td>
                                                 <td className="px-8 py-6">
-                                                    <div className={`flex items-center justify-center gap-2.5 bg-slate-950/50 rounded-2xl p-2 w-fit mx-auto border border-white/5 shadow-inner ${(!isEditing || isLocked) ? 'opacity-50 grayscale' : ''}`}>
+                                                    <div className={`flex items-center justify-center gap-2.5 bg-[#FCFBFA]/50 rounded-2xl p-2 w-fit mx-auto border border-white/5 shadow-inner ${(!isEditing || isLocked) ? 'opacity-50 grayscale' : ''}`}>
                                                         {[
                                                             { id: 'Present', icon: UserCheck, color: 'text-emerald-400', activeBg: 'bg-emerald-500/20 border-emerald-500/30' },
                                                             { id: 'Absent', icon: UserX, color: 'text-rose-400', activeBg: 'bg-rose-500/20 border-rose-500/30' },
@@ -437,7 +437,7 @@ const TeacherAttendance = () => {
                                                             type="text"
                                                             placeholder="Add ledger entry..."
                                                             disabled={!isEditing || isLocked}
-                                                            className={`w-full bg-slate-950/20 border-b-2 border-white/5 group-hover/input:border-indigo-500/30 focus:border-indigo-500/50 outline-none py-2 text-xs font-bold text-slate-300 transition-all placeholder:text-slate-800 italic ${(!isEditing || isLocked) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                                            className={`w-full bg-[#FCFBFA]/20 border-b-2 border-white/5 group-hover/input:border-indigo-500/30 focus:border-indigo-500/50 outline-none py-2 text-xs font-bold text-slate-300 transition-all placeholder:text-slate-800 italic ${(!isEditing || isLocked) ? 'opacity-40 cursor-not-allowed' : ''}`}
                                                             value={attendance[student._id]?.remarks || ''}
                                                             onChange={(e) => handleRemarksChange(student._id, e.target.value)}
                                                         />

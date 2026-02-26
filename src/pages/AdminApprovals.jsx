@@ -18,7 +18,7 @@ const AdminApprovals = () => {
 
     const fetchPendingUsers = async () => {
         try {
-            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/pending', {
+            const res = await axios.get('http://localhost:2000/school/pending', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPendingUsers(res.data);
@@ -33,7 +33,7 @@ const AdminApprovals = () => {
     const handleApproveUser = async (userId) => {
         setApprovingId(userId);
         try {
-            await axios.post('https://educbt-pro-backend.onrender.com/school/approve',
+            await axios.post('http://localhost:2000/school/approve',
                 { userId, action: 'approve' },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -52,7 +52,7 @@ const AdminApprovals = () => {
 
         setApprovingId(userId);
         try {
-            await axios.post('https://educbt-pro-backend.onrender.com/school/approve',
+            await axios.post('http://localhost:2000/school/approve',
                 { userId, action: 'reject' },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

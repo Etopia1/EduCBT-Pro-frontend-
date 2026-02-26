@@ -23,7 +23,7 @@ const Teachers = () => {
 
     const fetchTeachers = async () => {
         try {
-            const response = await axios.get('https://educbt-pro-backend.onrender.com/school/teachers', {
+            const response = await axios.get('http://localhost:2000/school/teachers', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTeachers(response.data);

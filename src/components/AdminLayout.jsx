@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, GraduationCap, FileQuestion, ClipboardCheck,
-    Calendar, MoreHorizontal, LogOut, Menu, X, Settings, UserCheck,
-    CreditCard, MessageSquare, ChevronRight
+    LogOut, Menu, X, Settings, UserCheck,
+    MessageSquare, ChevronRight, Activity
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice';
+import toast from 'react-hot-toast';
 
 const AdminLayout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -22,11 +23,7 @@ const AdminLayout = ({ children }) => {
         { path: '/school/students', label: 'Students', icon: GraduationCap },
         { path: '/school/exams', label: 'Exams', icon: FileQuestion },
         { path: '/school/results', label: 'Results', icon: ClipboardCheck },
-        { path: '/school/events', label: 'Events', icon: Calendar },
-        { path: '/school/community', label: 'Staff Community', icon: MessageSquare },
-        { path: '/school/subscription', label: 'Subscription', icon: CreditCard },
-        { path: '/school/result-template', label: 'Result Template', icon: FileQuestion },
-        { path: '/school/others', label: 'Others', icon: MoreHorizontal },
+        { path: '/school/community', label: 'Community', icon: MessageSquare },
         { path: '/school/settings', label: 'Settings', icon: Settings },
     ];
 
@@ -35,47 +32,69 @@ const AdminLayout = ({ children }) => {
         navigate('/login');
     };
 
-    const currentLabel = menuItems.find(i => i.path === location.pathname)?.label || 'Dashboard';
+    const currentLabel = menuItems.find(i => i.path === location.pathname)?.label || 'Intelligence Hub';
+
+    const copyInviteLink = (type) => {
+        let link = '';
+        if (type === 'teacher') {
+            link = `${window.location.origin}/#/signup/teacher?schoolId=${user?.schoolId || ''}`;
+        } else {
+            link = `${window.location.origin}/#/signup/student?schoolRefId=${user?.schoolRefId || ''}`;
+        }
+        navigator.clipboard.writeText(link);
+        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} access token copied!`, {
+            style: {
+                background: '#1a120b',
+                color: '#c5a059',
+                borderRadius: '1rem',
+                fontSize: '11px',
+                fontWeight: '900',
+                border: '1px solid rgba(197, 160, 89, 0.2)'
+            }
+        });
+    };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex font-sans">
-
-            {/* Mobile backdrop */}
+        <div className="min-h-screen bg-[#fcfbf9] flex font-outfit text-[#1a150e]">
+            {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+                    className="fixed inset-0 z-40 bg-[#1a150e]/60 backdrop-blur-sm md:hidden transition-opacity"
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}
 
-            {/* ── Sidebar ───────────────────────────────────────────── */}
+            {/* Side Navigation */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-64 flex flex-col
-                bg-slate-900/80 backdrop-blur-xl border-r border-white/5
-                transform transition-transform duration-300 ease-in-out
-                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-                md:relative md:translate-x-0
+                fixed inset-y-0 left-0 z-50 w-[280px] flex flex-col
+                bg-white border-r border-slate-100 shadow-[20px_0_60px_-15px_rgba(0,0,0,0.03)]
+                transform transition-all duration-500 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}>
-                {/* Logo / School */}
-                <div className="p-5 border-b border-white/5 flex items-center gap-3">
-                    {user?.schoolLogo ? (
-                        <img src={user.schoolLogo} alt="logo" className="w-9 h-9 rounded-xl object-cover ring-2 ring-indigo-500/30" />
-                    ) : (
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-500/30">
-                            {user?.schoolName?.charAt(0) || 'A'}
+                {/* Branding Core */}
+                <div className="p-8 border-b border-slate-50 relative group">
+                    <div className="flex items-center gap-4">
+                        <div className="w-11 h-11 rounded-2xl bg-[#1a120b] flex items-center justify-center border border-[#c5a059]/10 shadow-xl overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-500">
+                             {user?.schoolLogo ? (
+                                <img src={user.schoolLogo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                <Activity size={20} className="text-[#c5a059]" />
+                            )}
                         </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{user?.schoolName || 'Admin Panel'}</p>
-                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">School Admin</p>
+                        <div className="min-w-0">
+                            <h2 className="text-[15px] font-black text-[#1a150e] truncate uppercase tracking-tighter italic leading-none mb-1.5">
+                                {user?.schoolName || 'KICC CBT'}
+                            </h2>
+                            <span className="text-[9px] font-black text-[#c5a059] uppercase tracking-[0.3em]">Institutional Node</span>
+                        </div>
                     </div>
-                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white">
+                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden absolute top-8 right-6 text-slate-300 hover:text-rose-500 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Nav */}
-                <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+                {/* Primary Navigation */}
+                <nav className="flex-1 overflow-y-auto p-4 space-y-1 mt-4 custom-scrollbar">
                     {menuItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
@@ -85,96 +104,80 @@ const AdminLayout = ({ children }) => {
                                 to={item.path}
                                 onClick={() => setIsSidebarOpen(false)}
                                 className={`
-                                    group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
-                                    ${isActive
-                                        ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/20'
-                                        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'
-                                    }
+                                    flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black tracking-[0.1em] transition-all relative group uppercase italic
+                                    ${isActive 
+                                        ? 'bg-[#1a120b] text-[#c5a059] shadow-2xl shadow-black/10' 
+                                        : 'text-slate-400 hover:bg-slate-50 hover:text-[#1a150e]'}
                                 `}
                             >
-                                <Icon size={18} className={isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'} />
-                                <span className="text-sm font-medium flex-1">{item.label}</span>
-                                {isActive && <ChevronRight size={14} className="text-indigo-400 opacity-60" />}
+                                <Icon size={18} className={`${isActive ? 'text-[#c5a059]' : 'text-slate-300 group-hover:text-[#c5a059]'} transition-colors duration-300`} />
+                                {item.label}
+                                {isActive && (
+                                    <div className="absolute right-4 w-1.5 h-1.5 bg-[#c5a059] rounded-full shadow-[0_0_12px_#c5a059]" />
+                                )}
                             </Link>
                         );
                     })}
                 </nav>
 
-                {/* User footer */}
-                <div className="p-3 border-t border-white/5">
-                    <div className="flex items-center gap-3 px-3 py-2 mb-1">
-                        <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm shrink-0">
-                            {user?.fullName?.charAt(0) || 'A'}
+                {/* Identity Module */}
+                <div className="p-6 border-t border-slate-50 bg-[#fcfbf9]/50 space-y-6">
+                    <div className="flex items-center gap-4 px-2">
+                        <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-sm relative group cursor-pointer">
+                             <span className="text-[12px] font-black text-[#c5a059] uppercase italic">{user?.fullName?.charAt(0) || 'A'}</span>
+                             <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-slate-200 truncate">{user?.fullName || 'Admin'}</p>
-                            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                        <div className="min-w-0">
+                            <p className="text-[12px] font-black text-[#1a150e] truncate uppercase italic leading-none mb-1.5">{user?.fullName || 'Admin'}</p>
+                            <p className="text-[8px] font-black text-[#c5a059]/60 uppercase tracking-widest bg-[#c5a059]/5 px-2 py-0.5 rounded-lg border border-[#c5a059]/10">
+                                Authority Active
+                            </p>
                         </div>
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-3 py-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-all text-sm font-medium"
+                        className="flex items-center justify-center gap-3 w-full h-14 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-[1.25rem] transition-all text-[10px] font-black uppercase tracking-[0.15em] border border-slate-100 hover:border-rose-500 shadow-sm group"
                     >
-                        <LogOut size={17} />
-                        Logout
+                        <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        Close Registry
                     </button>
                 </div>
             </aside>
 
-            {/* ── Main content ──────────────────────────────────────── */}
-            <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-
-                {/* Top bar */}
-                <header className="sticky top-0 z-30 border-b border-white/5 bg-slate-900/60 backdrop-blur-xl px-5 py-3.5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="md:hidden text-slate-400 hover:text-white transition-colors p-1"
-                        >
-                            <Menu size={22} />
+            {/* Global Interface */}
+            <div className="flex-1 flex flex-col min-h-screen overflow-hidden md:ml-[280px]">
+                <header className="sticky top-0 z-30 border-b border-slate-50 bg-white/70 backdrop-blur-2xl px-8 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden text-[#1a150e] hover:text-[#c5a059] transition-all p-1 active:scale-95">
+                            <Menu size={24} />
                         </button>
-                        {/* Breadcrumb */}
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="text-slate-500 hidden md:inline">Dashboard</span>
-                            {location.pathname !== '/school/dashboard' && (
-                                <>
-                                    <ChevronRight size={14} className="text-slate-600 hidden md:inline" />
-                                    <span className="text-slate-200 font-semibold">{currentLabel}</span>
-                                </>
-                            )}
-                            {location.pathname === '/school/dashboard' && (
-                                <span className="text-slate-200 font-semibold md:hidden">{currentLabel}</span>
-                            )}
+                        <div className="flex items-center gap-4">
+                            <div className="hidden lg:flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                <Activity size={14} className="text-[#c5a059]/50" />
+                                <span>Network</span>
+                                <ChevronRight size={12} className="text-slate-200" />
+                                <span className="text-[#1a150e] italic underline decoration-[#c5a059]/30 underline-offset-4 decoration-2">{currentLabel}</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Header actions */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                         <button
-                            onClick={() => {
-                                const link = `${window.location.origin}/#/signup/teacher?schoolId=${user?.schoolId || ''}`;
-                                navigator.clipboard.writeText(link);
-                                import('react-hot-toast').then(m => m.default.success('Teacher invite link copied!'));
-                            }}
-                            className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/20 transition-all"
+                            onClick={() => copyInviteLink('teacher')}
+                            className="hidden sm:flex items-center gap-2.5 h-11 px-5 text-[10px] font-black uppercase tracking-widest text-[#c5a059] bg-[#c5a059]/5 border border-[#c5a059]/10 rounded-xl hover:bg-[#c5a059]/10 transition-all active:scale-95"
                         >
-                            <Users size={14} /> Invite Teachers
+                            <Users size={16} /> Invite Faculty
                         </button>
                         <button
-                            onClick={() => {
-                                const link = `${window.location.origin}/#/signup/student?schoolId=${user?.schoolId || ''}`;
-                                navigator.clipboard.writeText(link);
-                                import('react-hot-toast').then(m => m.default.success('Student invite link copied!'));
-                            }}
-                            className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 transition-all"
+                            onClick={() => copyInviteLink('student')}
+                            className="hidden sm:flex items-center gap-2.5 h-11 px-5 text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-500/10 rounded-xl hover:bg-emerald-500 hover:text-white transition-all active:scale-95 shadow-sm"
                         >
-                            <GraduationCap size={14} /> Invite Students
+                            <GraduationCap size={16} /> Add Candidate
                         </button>
                     </div>
                 </header>
 
-                {/* Page content */}
-                <main className="flex-1 overflow-auto p-4 md:p-8">
+                <main className="flex-1 overflow-auto p-4 md:p-10 lg:p-12 custom-scrollbar scroll-smooth">
                     {children}
                 </main>
             </div>

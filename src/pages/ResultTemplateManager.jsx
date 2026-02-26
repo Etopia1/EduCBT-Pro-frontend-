@@ -154,7 +154,7 @@ const ResultTemplateManager = () => {
     const fetchTemplate = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('https://educbt-pro-backend.onrender.com/result-template', { headers });
+            const res = await axios.get('http://localhost:2000/result-template', { headers });
             setTemplate(res.data.template);
             setMappings(res.data.template.fieldMappings || {});
         } catch (e) {
@@ -180,7 +180,7 @@ const ResultTemplateManager = () => {
             formData.append('templateName', file.name);
             formData.append('detectedPlaceholders', JSON.stringify(detected));
 
-            const res = await axios.post('https://educbt-pro-backend.onrender.com/result-template/upload', formData, {
+            const res = await axios.post('http://localhost:2000/result-template/upload', formData, {
                 headers: { ...headers, 'Content-Type': 'multipart/form-data' }
             });
             setTemplate(res.data.template);
@@ -195,7 +195,7 @@ const ResultTemplateManager = () => {
 
     const saveMappings = async () => {
         try {
-            const res = await axios.put('https://educbt-pro-backend.onrender.com/result-template/mappings', { mappings }, { headers });
+            const res = await axios.put('http://localhost:2000/result-template/mappings', { mappings }, { headers });
             setTemplate(res.data.template);
             toast.success('Mappings saved!');
         } catch { toast.error('Failed to save mappings'); }
@@ -204,7 +204,7 @@ const ResultTemplateManager = () => {
     const deleteTemplate = async () => {
         if (!confirm('Delete the uploaded template? This cannot be undone.')) return;
         try {
-            await axios.delete('https://educbt-pro-backend.onrender.com/result-template', { headers });
+            await axios.delete('http://localhost:2000/result-template', { headers });
             setTemplate(null);
             setMappings({});
             toast.success('Template deleted');
@@ -282,7 +282,7 @@ const ResultTemplateManager = () => {
                                 { t: 'Execute Generation', s: 'Access filled records in the Student Records module' }
                             ].map((step, i) => (
                                 <li key={i} className="flex items-start gap-4 group/item">
-                                    <div className="w-6 h-6 shrink-0 bg-slate-950/50 border border-white/10 rounded-lg flex items-center justify-center text-[10px] font-black text-indigo-400 group-hover/item:border-indigo-500/50 transition-colors mt-0.5">
+                                    <div className="w-6 h-6 shrink-0 bg-[#FCFBFA]/50 border border-white/10 rounded-lg flex items-center justify-center text-[10px] font-black text-indigo-400 group-hover/item:border-indigo-500/50 transition-colors mt-0.5">
                                         {i + 1}
                                     </div>
                                     <div>
@@ -308,7 +308,7 @@ const ResultTemplateManager = () => {
                             }`}
                         >
                             <div className={`w-24 h-24 rounded-3xl mb-6 flex items-center justify-center transition-all duration-500 shadow-inner ${
-                                dragOver ? 'bg-indigo-600 scale-110 rotate-12' : 'bg-slate-950/50 group-hover:scale-105'
+                                dragOver ? 'bg-indigo-600 scale-110 rotate-12' : 'bg-[#FCFBFA]/50 group-hover:scale-105'
                             }`}>
                                 {uploading ? (
                                     <RefreshCw size={40} className="text-white animate-spin" />
@@ -347,7 +347,7 @@ const ResultTemplateManager = () => {
 
                                 <div className="grid grid-cols-2 gap-3 mb-4">
                                     <button onClick={downloadBlankTemplate}
-                                        className="flex items-center justify-center gap-2 h-11 bg-slate-950/50 hover:bg-slate-900 text-slate-400 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                        className="flex items-center justify-center gap-2 h-11 bg-[#FCFBFA]/50 hover:bg-slate-900 text-slate-400 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
                                         <Download size={14} /> Download
                                     </button>
                                     <button onClick={previewWithDummyData}
@@ -357,7 +357,7 @@ const ResultTemplateManager = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button onClick={() => fileInputRef.current?.click()}
-                                        className="flex items-center justify-center gap-2 h-11 bg-slate-950/50 hover:bg-slate-900 text-slate-400 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                        className="flex items-center justify-center gap-2 h-11 bg-[#FCFBFA]/50 hover:bg-slate-900 text-slate-400 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
                                         <RefreshCw size={14} /> Re-link Template
                                     </button>
                                     <button onClick={deleteTemplate}
@@ -378,7 +378,7 @@ const ResultTemplateManager = () => {
                             onClick={() => setShowMappings(v => !v)}
                             className="w-full flex items-center justify-between px-8 py-6 hover:bg-white/2 transition-colors">
                             <div className="flex items-center gap-4">
-                                <div className="p-2 bg-slate-950/50 rounded-lg border border-white/5">
+                                <div className="p-2 bg-[#FCFBFA]/50 rounded-lg border border-white/5">
                                     <Settings size={20} className="text-slate-500" />
                                 </div>
                                 <div>
@@ -405,7 +405,7 @@ const ResultTemplateManager = () => {
                                     {template.detectedPlaceholders.map(ph => {
                                         const isMapped = !!mappings[ph];
                                         return (
-                                            <div key={ph} className="flex flex-col gap-2 p-3 bg-slate-950/30 rounded-2xl border border-white/5 hover:border-white/10 transition-all group/mapping">
+                                            <div key={ph} className="flex flex-col gap-2 p-3 bg-[#FCFBFA]/30 rounded-2xl border border-white/5 hover:border-white/10 transition-all group/mapping">
                                                 <div className="flex items-center justify-between px-2">
                                                     <div className="flex items-center gap-2">
                                                         <FileJson size={14} className={isMapped ? 'text-emerald-400' : 'text-slate-600'} />
@@ -459,7 +459,7 @@ const ResultTemplateManager = () => {
                         <div>
                             <h5 className="text-lg font-black text-white italic uppercase tracking-tight mb-2">Null Sequence Detected</h5>
                             <p className="text-slate-400 text-sm font-medium italic leading-relaxed">
-                                The uplinked template does not contain any functional <code className="bg-slate-950 px-2 py-1 rounded text-rose-400 font-mono">{'{{PLACEHOLDER}}'}</code> indices. 
+                                The uplinked template does not contain any functional <code className="bg-[#FCFBFA] px-2 py-1 rounded text-rose-400 font-mono">{'{{PLACEHOLDER}}'}</code> indices. 
                                 Please modify the original spreadsheet and define the spatial anchors for data injection, then re-initialize the upload sequence.
                             </p>
                         </div>

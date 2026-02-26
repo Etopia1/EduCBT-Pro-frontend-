@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginStart, loginSuccess, loginFailure } from '../redux/authSlice';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, LogIn, ArrowLeft, Shield } from 'lucide-react';
 
 const Login = () => {
     const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -20,7 +20,7 @@ const Login = () => {
         e.preventDefault();
         dispatch(loginStart());
         try {
-            const res = await axios.post('https://educbt-pro-backend.onrender.com/auth/login', credentials);
+            const res = await axios.post('http://localhost:2000/auth/login', credentials);
             dispatch(loginSuccess(res.data));
             const user = res.data.user;
             if (user.role === 'admin') navigate('/admin');
@@ -29,148 +29,154 @@ const Login = () => {
             else if (user.role === 'student') navigate('/student/dashboard');
             else navigate('/login');
         } catch (err) {
-            dispatch(loginFailure(err.response?.data?.message || 'Login failed'));
+            dispatch(loginFailure(err.response?.data?.message || 'Authentication failed. Please check your credentials.'));
         }
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center relative overflow-hidden px-4">
-            {/* Background glows */}
-            <div
-                className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full opacity-20 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, #6366f1, transparent)', transform: 'translate(-30%, -30%)' }}
-            />
-            <div
-                className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full opacity-15 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, #a855f7, transparent)', transform: 'translate(30%, 30%)' }}
-            />
-            {/* Grid overlay */}
-            <div
-                className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                style={{
-                    backgroundImage:
-                        'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                    backgroundSize: '50px 50px',
-                }}
-            />
+        <div className="min-h-screen bg-[#fcfbf9] flex items-center justify-center relative overflow-hidden px-4 font-outfit">
+            {/* Soft Background Accents */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div 
+                    className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] rounded-full blur-[120px] opacity-[0.05]" 
+                    style={{ background: 'radial-gradient(circle, #c5a059, transparent)' }}
+                />
+                <div 
+                    className="absolute bottom-[-10%] right-[-10%] w-[35rem] h-[35rem] rounded-full blur-[100px] opacity-[0.03]" 
+                    style={{ background: 'radial-gradient(circle, #8b6b23, transparent)' }}
+                />
+            </div>
 
-            {/* Back to home */}
-            <button
-                onClick={() => navigate('/')}
-                className="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors duration-200 group"
-            >
-                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform duration-200" />
-                Back to Home
-            </button>
+            {/* Navigation Header */}
+            <div className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-20">
+                <button
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-3 text-slate-400 hover:text-[#c5a059] text-[10px] font-black uppercase tracking-[0.2em] transition-all group"
+                >
+                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                    Back to Registry
+                </button>
+            </div>
 
-            {/* Card */}
-            <div className="relative z-10 w-full max-w-md">
-                {/* Logo */}
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-indigo-500/30 mb-4">
-                        <GraduationCap size={28} className="text-white" />
+            {/* Login Container */}
+            <div className="relative z-10 w-full max-w-[440px] animate-fade-in-up">
+                {/* Brand Header */}
+                <div className="flex flex-col items-center mb-12">
+                    <div className="w-16 h-16 rounded-3xl bg-[#1a120b] flex items-center justify-center shadow-2xl border border-[#c5a059]/10 mb-6 transition-transform hover:rotate-12 duration-500">
+                        <GraduationCap size={32} className="text-[#c5a059]" />
                     </div>
-                    <span className="text-white font-bold text-2xl tracking-tight">
-                        EduCBT <span className="text-indigo-400">Pro</span>
-                    </span>
-                    <p className="text-slate-400 text-sm mt-1">Secondary School CBT Platform</p>
+                    <div className="text-center">
+                        <h2 className="text-[#1a150e] font-black text-3xl tracking-tighter leading-none mb-2 uppercase italic">
+                            KICC <span className="gold-text-gradient">CBT</span>
+                        </h2>
+                        <div className="flex items-center justify-center gap-2">
+                             <Shield size={10} className="text-[#c5a059]" />
+                             <span className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em]">Kids Can Code Authority</span>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Form card */}
-                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-8 shadow-2xl">
-                    <div className="mb-7">
-                        <h1 className="text-2xl font-bold text-white mb-1">Welcome back</h1>
-                        <p className="text-slate-400 text-sm">Sign in to your school portal</p>
+                {/* Authentication Card */}
+                <div className="premium-card p-10 sm:p-12 relative">
+                    <div className="mb-10 text-center sm:text-left">
+                        <h1 className="text-2xl font-black text-[#1a150e] mb-2 uppercase italic tracking-tight">Identity Access</h1>
+                        <p className="text-slate-500 text-[13px] font-medium leading-relaxed italic">Enter your institutional credentials to bypass the security layer.</p>
                     </div>
 
                     {error && (
-                        <div className="mb-5 flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl px-4 py-3 text-sm">
-                            <span className="shrink-0">?</span>
+                        <div className="mb-8 flex items-start gap-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl px-5 py-4 text-[12px] font-bold animate-pulse">
+                            <span className="shrink-0 mt-0.5">⚠️</span>
                             {error}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Login ID */}
-                        <div>
-                            <label className="block text-slate-300 text-sm font-medium mb-2">Login ID</label>
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* Username/ID */}
+                        <div className="space-y-3">
+                            <label className="block text-[#1a150e]/40 text-[10px] font-black uppercase tracking-[0.2em] ml-1">Registry ID / Username</label>
                             <input
                                 name="username"
                                 value={credentials.username}
                                 onChange={handleChange}
-                                placeholder="e.g. SCH-123, TCH-456, STD-789"
+                                placeholder="e.g. SCH-10492"
                                 required
                                 autoComplete="username"
-                                className="w-full bg-slate-900/70 border border-slate-700/60 hover:border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm outline-none transition-all duration-200"
+                                className="input-field"
                             />
                         </div>
 
                         {/* Password */}
-                        <div>
-                            <label className="block text-slate-300 text-sm font-medium mb-2">Password</label>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between ml-1">
+                                <label className="block text-[#1a150e]/40 text-[10px] font-black uppercase tracking-[0.2em]">Secure Pass-Key</label>
+                                <button type="button" className="text-[#c5a059] text-[9px] font-black uppercase tracking-widest hover:underline">Forgot Key?</button>
+                            </div>
                             <div className="relative">
                                 <input
                                     name="password"
                                     type={showPassword ? 'text' : 'password'}
                                     value={credentials.password}
                                     onChange={handleChange}
-                                    placeholder="Enter your password"
+                                    placeholder="••••••••••••"
                                     required
                                     autoComplete="current-password"
-                                    className="w-full bg-slate-900/70 border border-slate-700/60 hover:border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 rounded-xl px-4 py-3 pr-12 text-white placeholder-slate-500 text-sm outline-none transition-all duration-200"
+                                    className="input-field pr-14"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-[#c5a059] transition-colors p-1"
                                     tabIndex={-1}
                                 >
-                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Submit */}
+                        {/* Primary Action */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300 text-sm mt-2"
+                            className="btn-primary w-full mt-4 h-14"
                         >
                             {loading ? (
-                                <>
-                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                                    </svg>
-                                    Signing in...
-                                </>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 border-2 border-[#c5a059]/20 border-t-[#c5a059] rounded-full animate-spin" />
+                                    <span>Verifying...</span>
+                                </div>
                             ) : (
                                 <>
-                                    <LogIn size={16} />
-                                    Sign In
+                                    <LogIn size={18} />
+                                    Initialize Session
                                 </>
                             )}
                         </button>
                     </form>
 
-                    {/* Footer links */}
-                    <div className="mt-6 pt-6 border-t border-slate-700/50 text-center space-y-2">
-                        <p className="text-slate-500 text-sm">
-                            Don't have an account?{' '}
+                    {/* Registration Redirect */}
+                    <div className="mt-12 pt-8 border-t border-slate-50 text-center">
+                        <p className="text-slate-400 text-xs font-semibold">
+                            Institutional registry pending?{' '}
                             <button
                                 onClick={() => navigate('/register-school')}
-                                className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                                className="text-[#c5a059] hover:text-[#8b6b23] font-black transition-all underline decoration-[#c5a059]/30 underline-offset-4 ml-1"
                             >
-                                Register your school
+                                Register Identity
                             </button>
                         </p>
                     </div>
                 </div>
 
+                {/* Bottom Legal/Footer */}
+                <div className="mt-10 flex flex-col items-center gap-2">
+                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em] text-center">
+                        © {new Date().getFullYear()} KICC CBT Authority Hub
+                    </p>
+                    <div className="w-12 h-[1px] bg-slate-100" />
+                </div>
             </div>
         </div>
     );
 };
 
 export default Login;
-

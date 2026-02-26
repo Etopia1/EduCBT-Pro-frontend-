@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
     GraduationCap, ArrowLeft, Upload, School, Mail, Phone,
-    MapPin, User, Lock, CheckCircle2, ArrowRight
+    MapPin, User, Lock, CheckCircle2, ArrowRight, ShieldCheck, Activity
 } from 'lucide-react';
 
-const steps = ['School Info', 'Location', 'Admin Account'];
+const steps = ['Institutional Info', 'Registry Location', 'Admin Protocol'];
 
 const SchoolRegister = () => {
     const [step, setStep] = useState(0);
@@ -52,326 +52,309 @@ const SchoolRegister = () => {
         data.append('adminName', formData.adminName);
         data.append('adminPassword', formData.adminPassword);
 
-        const loadingToast = toast.loading('Registering school...');
+        const loadingToast = toast.loading('Initializing Institutional Registry...');
         try {
-            const res = await axios.post('https://educbt-pro-backend.onrender.com/school/register', data);
+            const res = await axios.post('http://localhost:2000/school/register', data);
             toast.dismiss(loadingToast);
-            toast.success('Registration successful! Check your email.', { duration: 6000 });
+            toast.success('Registry Initialized successfully!');
             toast((t) => (
-                <span>
-                    Your Login ID: <b>{res.data.schoolLoginId}</b>
-                    <br />Please save this!
-                </span>
-            ), { duration: 8000, icon: '??' });
+                <div className="flex flex-col gap-2">
+                    <p className="font-black text-[10px] uppercase tracking-widest text-[#1a120b]">Institutional Login ID</p>
+                    <p className="text-xl font-black text-[#c5a059] italic">{res.data.schoolLoginId}</p>
+                    <p className="text-[9px] text-slate-500 font-bold">Please secure this ID for portal access.</p>
+                </div>
+            ), { duration: 10000, icon: '??' });
             navigate('/login');
         } catch (error) {
             toast.dismiss(loadingToast);
-            toast.error(error.response?.data?.message || 'Registration failed');
+            toast.error(error.response?.data?.message || 'Registry Initialization failed');
         }
     };
 
-    // Input field shared styling
-    const inputClass =
-        'w-full bg-slate-900/70 border border-slate-700/60 hover:border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm outline-none transition-all duration-200';
-
     return (
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center relative overflow-hidden px-4 py-10">
-            {/* Background glows */}
-            <div
-                className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full opacity-20 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, #6366f1, transparent)', transform: 'translate(-30%, -30%)' }}
-            />
-            <div
-                className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full opacity-15 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, #a855f7, transparent)', transform: 'translate(30%, 30%)' }}
-            />
-            <div
-                className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                style={{
-                    backgroundImage:
-                        'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                    backgroundSize: '50px 50px',
-                }}
-            />
+        <div className="min-h-screen bg-[#fcfbf9] flex items-center justify-center relative overflow-hidden px-4 py-20 font-outfit">
+            {/* Design Elements */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-[#c5a059]/5 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[35rem] h-[35rem] bg-[#1a120b]/5 blur-[100px] rounded-full pointer-events-none" />
 
-            {/* Back to home */}
+            {/* Navigation Exit */}
             <button
                 onClick={() => navigate('/')}
-                className="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors duration-200 group"
+                className="absolute top-10 left-10 flex items-center gap-3 text-slate-400 hover:text-[#1a150e] text-[10px] font-black uppercase tracking-[0.2em] transition-all group"
             >
-                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform duration-200" />
-                Back to Home
+                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                Return to Landing
             </button>
 
-            <div className="relative z-10 w-full max-w-lg">
-                {/* Logo */}
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-indigo-500/30 mb-4">
-                        <GraduationCap size={28} className="text-white" />
+            <div className="relative z-10 w-full max-w-xl">
+                {/* Brand Identity */}
+                <div className="flex flex-col items-center mb-12 animate-fade-in-up">
+                    <div className="w-16 h-16 rounded-[2rem] bg-[#1a120b] flex items-center justify-center border border-[#c5a059]/10 shadow-2xl mb-6 group hover:rotate-12 transition-transform duration-500">
+                        <Activity size={32} className="text-[#c5a059]" />
                     </div>
-                    <span className="text-white font-bold text-2xl tracking-tight">
-                        EduCBT <span className="text-indigo-400">Pro</span>
-                    </span>
-                    <p className="text-slate-400 text-sm mt-1">Register your secondary school</p>
+                    <h1 className="text-3xl font-black text-[#1a150e] tracking-tighter uppercase italic text-center">
+                        Institutional <span className="gold-text-gradient">Onboarding</span>
+                    </h1>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-3">Registry Initialization Portal</p>
                 </div>
 
-                {/* Step indicator */}
-                <div className="flex items-center justify-center gap-2 mb-8">
+                {/* Vertical Step Node */}
+                <div className="flex items-center justify-center gap-4 mb-12 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                     {steps.map((label, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                            <div className="flex flex-col items-center">
+                        <div key={i} className="flex items-center gap-4">
+                            <div className="flex flex-col items-center group">
                                 <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                                    className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[10px] font-black transition-all duration-500 ${
                                         i < step
-                                            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
+                                            ? 'bg-[#c5a059] text-[#1a120b] shadow-lg shadow-[#c5a059]/20'
                                             : i === step
-                                            ? 'bg-indigo-500/20 border-2 border-indigo-500 text-indigo-400'
-                                            : 'bg-slate-800 border border-slate-700 text-slate-500'
+                                            ? 'bg-[#1a120b] text-[#c5a059] shadow-xl border border-[#c5a059]/20'
+                                            : 'bg-white border border-slate-100 text-slate-300'
                                     }`}
                                 >
-                                    {i < step ? <CheckCircle2 size={14} /> : i + 1}
+                                    {i < step ? <CheckCircle2 size={16} /> : `0${i + 1}`}
                                 </div>
-                                <span className={`text-xs mt-1 hidden sm:block ${i === step ? 'text-indigo-400' : 'text-slate-500'}`}>
+                                <span className={`text-[9px] font-black uppercase tracking-widest mt-2 hidden sm:block ${i === step ? 'text-[#1a150e]' : 'text-slate-400'}`}>
                                     {label}
                                 </span>
                             </div>
                             {i < steps.length - 1 && (
-                                <div className={`w-10 h-px mb-5 transition-all duration-300 ${i < step ? 'bg-indigo-500' : 'bg-slate-700'}`} />
+                                <div className={`w-12 h-px transition-all duration-500 ${i < step ? 'bg-[#c5a059]' : 'bg-slate-100'}`} />
                             )}
                         </div>
                     ))}
                 </div>
 
-                {/* Form card */}
-                <form onSubmit={step < 2 ? (e) => { e.preventDefault(); setStep(s => s + 1); } : handleSubmit}>
-                    <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-8 shadow-2xl">
+                {/* Data Matrix Card */}
+                <form onSubmit={step < 2 ? (e) => { e.preventDefault(); setStep(s => s + 1); } : handleSubmit} className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                    <div className="bg-white border border-slate-100 rounded-[3.5rem] p-10 md:p-14 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-[#c5a059]/5 blur-[60px] rounded-full group-hover:bg-[#c5a059]/10 transition-colors" />
 
-                        {/* Step 0: School Info */}
+                        {/* Node 0: Institutional Entity */}
                         {step === 0 && (
-                            <div className="space-y-5">
+                            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                                 <div>
-                                    <h2 className="text-xl font-bold text-white mb-1">School Information</h2>
-                                    <p className="text-slate-400 text-sm">Tell us about your secondary school</p>
+                                    <h2 className="text-xl font-black text-[#1a150e] uppercase italic tracking-tighter">Institutional Identity</h2>
+                                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Foundational school parameters</p>
                                 </div>
 
-                                {/* Logo upload */}
+                                {/* Logo Matrix */}
                                 <div className="flex flex-col items-center">
-                                    <label
-                                        htmlFor="logo-upload"
-                                        className="cursor-pointer group"
-                                        title="Click to upload school logo"
-                                    >
-                                        <div className={`w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden transition-all duration-300 ${
-                                            preview
-                                                ? 'border-indigo-500/50'
-                                                : 'border-slate-600 hover:border-indigo-500/60 bg-slate-900/50 hover:bg-slate-900'
+                                    <label htmlFor="logo-upload" className="cursor-pointer group relative">
+                                        <div className={`w-28 h-28 rounded-[2.5rem] border-2 border-dashed flex items-center justify-center overflow-hidden transition-all duration-500 ${
+                                            preview ? 'border-[#c5a059]/50 shadow-2xl' : 'border-slate-100 hover:border-[#c5a059] bg-slate-50/50 hover:bg-white'
                                         }`}>
                                             {preview ? (
-                                                <img src={preview} alt="Logo preview" className="w-full h-full object-cover rounded-xl" />
+                                                <img src={preview} alt="Identity preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                                             ) : (
-                                                <div className="flex flex-col items-center gap-1 text-slate-500 group-hover:text-indigo-400 transition-colors">
-                                                    <Upload size={22} />
-                                                    <span className="text-xs font-medium">Logo</span>
+                                                <div className="flex flex-col items-center gap-2 text-slate-300 group-hover:text-[#c5a059] transition-colors">
+                                                    <Upload size={24} />
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Upload</span>
                                                 </div>
                                             )}
                                         </div>
+                                        <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#1a120b] text-[#c5a059] rounded-xl flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Upload size={16} />
+                                        </div>
                                     </label>
-                                    <input
-                                        id="logo-upload"
-                                        type="file"
-                                        onChange={handleFileChange}
-                                        accept="image/*"
-                                        className="hidden"
-                                    />
-                                    <p className="text-slate-500 text-xs mt-2">Click to upload school logo</p>
+                                    <input id="logo-upload" type="file" onChange={handleFileChange} accept="image/*" className="hidden" />
                                 </div>
 
-                                <div>
-                                    <label className="block text-slate-300 text-sm font-medium mb-2">School Name *</label>
-                                    <div className="relative">
-                                        <School size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                                        <input
-                                            name="schoolName"
-                                            value={formData.schoolName}
-                                            onChange={handleChange}
-                                            placeholder="e.g. Greater Heights Secondary School"
-                                            required
-                                            className={inputClass + ' pl-10'}
-                                        />
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">School Nomenclature</label>
+                                        <div className="relative group/input">
+                                            <School size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                            <input
+                                                name="schoolName"
+                                                value={formData.schoolName}
+                                                onChange={handleChange}
+                                                placeholder="ENTER OFFICIAL NAME"
+                                                required
+                                                className="input-field pl-14"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div>
-                                    <label className="block text-slate-300 text-sm font-medium mb-2">School Email *</label>
-                                    <div className="relative">
-                                        <Mail size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                                        <input
-                                            name="schoolEmail"
-                                            type="email"
-                                            value={formData.schoolEmail}
-                                            onChange={handleChange}
-                                            placeholder="school@example.com"
-                                            required
-                                            className={inputClass + ' pl-10'}
-                                        />
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Official Channel</label>
+                                        <div className="relative group/input">
+                                            <Mail size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                            <input
+                                                name="schoolEmail"
+                                                type="email"
+                                                value={formData.schoolEmail}
+                                                onChange={handleChange}
+                                                placeholder="INSTITUTIONAL@EMAIL.COM"
+                                                required
+                                                className="input-field pl-14"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div>
-                                    <label className="block text-slate-300 text-sm font-medium mb-2">Phone Number</label>
-                                    <div className="relative">
-                                        <Phone size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                                        <input
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            placeholder="+234 800 000 0000"
-                                            className={inputClass + ' pl-10'}
-                                        />
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Secure Line</label>
+                                        <div className="relative group/input">
+                                            <Phone size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                            <input
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleChange}
+                                                placeholder="+234 000 000 0000"
+                                                className="input-field pl-14"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Step 1: Location */}
+                        {/* Node 1: Geographic Matrix */}
                         {step === 1 && (
-                            <div className="space-y-5">
+                            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                                 <div>
-                                    <h2 className="text-xl font-bold text-white mb-1">School Location</h2>
-                                    <p className="text-slate-400 text-sm">Where is your school located?</p>
+                                    <h2 className="text-xl font-black text-[#1a150e] uppercase italic tracking-tighter">Geographic Matrix</h2>
+                                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Spatial registry location</p>
                                 </div>
 
-                                <div>
-                                    <label className="block text-slate-300 text-sm font-medium mb-2">Street Address</label>
-                                    <div className="relative">
-                                        <MapPin size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                                        <input
-                                            name="address"
-                                            value={formData.address}
-                                            onChange={handleChange}
-                                            placeholder="12 School Street, GRA"
-                                            className={inputClass + ' pl-10'}
-                                        />
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Structural Address</label>
+                                        <div className="relative group/input">
+                                            <MapPin size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                            <input
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleChange}
+                                                placeholder="STREET, SECTOR, ZONE"
+                                                className="input-field pl-14"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-slate-300 text-sm font-medium mb-2">City</label>
-                                        <input
-                                            name="location.city"
-                                            value={formData.location.city}
-                                            onChange={handleChange}
-                                            placeholder="Lagos"
-                                            className={inputClass}
-                                        />
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">City Node</label>
+                                            <input
+                                                name="location.city"
+                                                value={formData.location.city}
+                                                onChange={handleChange}
+                                                placeholder="CITY"
+                                                className="input-field"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">State Node</label>
+                                            <input
+                                                name="location.state"
+                                                value={formData.location.state}
+                                                onChange={handleChange}
+                                                placeholder="STATE"
+                                                className="input-field"
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-slate-300 text-sm font-medium mb-2">State</label>
-                                        <input
-                                            name="location.state"
-                                            value={formData.location.state}
-                                            onChange={handleChange}
-                                            placeholder="Lagos State"
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                </div>
 
-                                <div>
-                                    <label className="block text-slate-300 text-sm font-medium mb-2">Country</label>
-                                    <input
-                                        name="location.country"
-                                        value={formData.location.country}
-                                        onChange={handleChange}
-                                        placeholder="Nigeria"
-                                        className={inputClass}
-                                    />
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Sovereign Domain</label>
+                                        <input
+                                            name="location.country"
+                                            value={formData.location.country}
+                                            onChange={handleChange}
+                                            placeholder="COUNTRY"
+                                            className="input-field"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Step 2: Admin Account */}
+                        {/* Node 2: Administrative Protocol */}
                         {step === 2 && (
-                            <div className="space-y-5">
+                            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                                 <div>
-                                    <h2 className="text-xl font-bold text-white mb-1">Admin Account</h2>
-                                    <p className="text-slate-400 text-sm">Create your school administrator login</p>
+                                    <h2 className="text-xl font-black text-[#1a150e] uppercase italic tracking-tighter">Administrative Protocol</h2>
+                                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Authority clearance credentials</p>
                                 </div>
 
-                                <div>
-                                    <label className="block text-slate-300 text-sm font-medium mb-2">Admin Full Name *</label>
-                                    <div className="relative">
-                                        <User size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                                        <input
-                                            name="adminName"
-                                            value={formData.adminName}
-                                            onChange={handleChange}
-                                            placeholder="e.g. Mrs. Adaeze Okonkwo"
-                                            required
-                                            className={inputClass + ' pl-10'}
-                                        />
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Authority Full Name</label>
+                                        <div className="relative group/input">
+                                            <User size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                            <input
+                                                name="adminName"
+                                                value={formData.adminName}
+                                                onChange={handleChange}
+                                                placeholder="ENTER OFFICIAL NAME"
+                                                required
+                                                className="input-field pl-14"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div>
-                                    <label className="block text-slate-300 text-sm font-medium mb-2">Admin Password *</label>
-                                    <div className="relative">
-                                        <Lock size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                                        <input
-                                            name="adminPassword"
-                                            type="password"
-                                            value={formData.adminPassword}
-                                            onChange={handleChange}
-                                            placeholder="Create a strong password"
-                                            required
-                                            className={inputClass + ' pl-10'}
-                                        />
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Access Key Override</label>
+                                        <div className="relative group/input">
+                                            <Lock size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                            <input
+                                                name="adminPassword"
+                                                type="password"
+                                                value={formData.adminPassword}
+                                                onChange={handleChange}
+                                                placeholder="CREATE SECURE KEY"
+                                                required
+                                                className="input-field pl-14"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
-                                    <p className="text-indigo-300 text-xs leading-relaxed">
-                                        ?? After registration, you'll receive a unique <strong>School Login ID</strong> (e.g. SCH-1234) by email. 
-                                        Use it together with your password to log in.
-                                    </p>
+                                    <div className="bg-[#1a120b] border border-[#c5a059]/20 rounded-3xl p-6 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#c5a059]/10 blur-[40px] rounded-full" />
+                                        <div className="flex gap-4 relative z-10">
+                                            <ShieldCheck size={20} className="text-[#c5a059] shrink-0" />
+                                            <p className="text-[#c5a059]/80 text-[10px] font-bold uppercase tracking-widest leading-relaxed italic">
+                                                Protocol Notification: Upon completion, a unique Institutional ID will be generated. Secure this identifier for all administrative login cycles.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Navigation buttons */}
-                        <div className={`flex gap-3 mt-7 ${step > 0 ? 'justify-between' : 'justify-end'}`}>
+                        {/* Navigation Execution */}
+                        <div className={`flex gap-4 mt-12 ${step > 0 ? 'justify-between' : 'justify-end'}`}>
                             {step > 0 && (
                                 <button
                                     type="button"
                                     onClick={() => setStep(s => s - 1)}
-                                    className="flex items-center gap-2 bg-slate-700/60 hover:bg-slate-700 border border-slate-600/60 text-slate-300 hover:text-white font-medium px-6 py-3 rounded-xl text-sm transition-all duration-200"
+                                    className="flex items-center gap-3 h-14 px-8 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-[#1a150e] font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-sm"
                                 >
-                                    <ArrowLeft size={15} />
-                                    Back
+                                    <ArrowLeft size={16} />
+                                    Phase Back
                                 </button>
                             )}
                             <button
                                 type="submit"
-                                className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold px-7 py-3 rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300 text-sm"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-3 h-14 px-10 bg-[#1a120b] hover:bg-black text-[#c5a059] font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-2xl active:scale-95 border border-[#c5a059]/20 shadow-black/20"
                             >
                                 {step < 2 ? (
-                                    <>Next <ArrowRight size={15} /></>
+                                    <>Verify Node <ArrowRight size={16} /></>
                                 ) : (
-                                    <>Complete Registration <CheckCircle2 size={15} /></>
+                                    <>Commit Registry <CheckCircle2 size={16} /></>
                                 )}
                             </button>
                         </div>
                     </div>
                 </form>
 
-                <p className="text-center text-slate-500 text-sm mt-5">
-                    Already registered?{' '}
+                <p className="text-center text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-10">
+                    Existing Registry?{' '}
                     <button
                         onClick={() => navigate('/login')}
-                        className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                        className="text-[#c5a059] hover:text-[#1a120b] transition-colors"
                     >
-                        Log in to your portal
+                        Access Portal Hub
                     </button>
                 </p>
             </div>
@@ -380,4 +363,3 @@ const SchoolRegister = () => {
 };
 
 export default SchoolRegister;
-

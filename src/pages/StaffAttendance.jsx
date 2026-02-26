@@ -27,7 +27,7 @@ const StaffAttendance = () => {
             const month = String(currentDate.getMonth() + 1).padStart(2, '0');
             const day = String(currentDate.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
-            const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/staff/attendance?date=${dateStr}`, {
+            const res = await axios.get(`http://localhost:2000/school/staff/attendance?date=${dateStr}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStaffData(res.data);
@@ -49,7 +49,7 @@ const StaffAttendance = () => {
         }
         setMarking(true);
         try {
-            await axios.post('https://educbt-pro-backend.onrender.com/school/staff/time-in', {}, {
+            await axios.post('http://localhost:2000/school/staff/time-in', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Time In marked successfully!");
@@ -64,7 +64,7 @@ const StaffAttendance = () => {
     const handleTimeOut = async () => {
         setMarking(true);
         try {
-            await axios.post('https://educbt-pro-backend.onrender.com/school/staff/time-out', {}, {
+            await axios.post('http://localhost:2000/school/staff/time-out', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Time Out marked successfully!");
@@ -174,7 +174,7 @@ const StaffAttendance = () => {
                                             </td>
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-slate-950/60 border border-white/5 flex items-center justify-center text-emerald-400 font-black text-xs italic shadow-inner group-hover:border-emerald-500/20 transition-all">
+                                                    <div className="w-10 h-10 rounded-xl bg-[#FCFBFA]/60 border border-white/5 flex items-center justify-center text-emerald-400 font-black text-xs italic shadow-inner group-hover:border-emerald-500/20 transition-all">
                                                         {staff.fullName.charAt(0)}
                                                     </div>
                                                     <div className="flex flex-col">

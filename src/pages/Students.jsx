@@ -30,7 +30,7 @@ const Students = () => {
 
     const fetchStudents = async () => {
         try {
-            const response = await axios.get('https://educbt-pro-backend.onrender.com/school/students', {
+            const response = await axios.get('http://localhost:2000/school/students', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStudents(response.data);
@@ -84,7 +84,7 @@ const Students = () => {
         if (!confirm('Are you sure you want to delete this student?')) return;
 
         try {
-            await axios.delete(`https://educbt-pro-backend.onrender.com/school/students/${studentId}`, {
+            await axios.delete(`http://localhost:2000/school/students/${studentId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Student deleted successfully');

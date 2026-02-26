@@ -29,6 +29,8 @@ import StudentRecordsSpreadsheet from './pages/StudentRecordsSpreadsheet';
 import Subscription from './pages/Subscription';
 import StaffCommunity from './pages/StaffCommunity';
 import ResultTemplateManager from './pages/ResultTemplateManager';
+import GradingDashboard from './pages/GradingDashboard';
+import AdminSettings from './pages/AdminSettings';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -88,14 +90,7 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route
-          path="/school/subscription"
-          element={
-            <PrivateRoute role="school_admin">
-              <Subscription />
-            </PrivateRoute>
-          }
-        />
+
         <Route
           path="/school/community"
           element={
@@ -179,6 +174,14 @@ function App() {
           }
         />
         <Route
+          path="/teacher/grading"
+          element={
+            <PrivateRoute role="teacher">
+              <GradingDashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/teacher/student-records"
           element={
             <PrivateRoute role="teacher">
@@ -211,6 +214,14 @@ function App() {
           }
         />
         <Route path="*" element={<Navigate to="/login" />} />
+        <Route
+          path="/school/settings"
+          element={
+            <PrivateRoute role="admin">
+              <AdminSettings />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </Router>
   );

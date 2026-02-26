@@ -8,41 +8,36 @@ import {
 } from 'recharts';
 import {
     Users, GraduationCap, CheckCircle, Clock, AlertTriangle,
-    UserCheck, TrendingUp, BookOpen, Zap, ArrowUpRight
+    Zap, ArrowUpRight, ShieldCheck, Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const COLORS = ['#10B981', '#F59E0B', '#EF4444'];
+const COLORS = ['#c5a059', '#1A120B', '#EF4444'];
 
-// -- Glassy stat card ----------------------------------------------------
-const StatCard = ({ title, value, icon: Icon, gradient, glow }) => (
-    <div className={`relative overflow-hidden rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6 flex flex-col gap-3 group hover:border-white/15 transition-all duration-300`}>
-        {/* Glow blob */}
-        <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 ${glow}`} />
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${gradient} shadow-lg`}>
-            <Icon size={20} className="text-white" />
-        </div>
-        <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{title}</p>
-            <h3 className="text-3xl font-black text-white">{value}</h3>
-        </div>
-        <div className="flex items-center gap-1 text-emerald-400 text-xs font-semibold">
-            <ArrowUpRight size={12} />
-            <span>This term</span>
+const StatCard = ({ title, value, icon: Icon, description }) => (
+    <div className="premium-card p-5 md:p-8 group relative overflow-hidden animate-fade-in-up">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#c5a059]/5 blur-[60px] rounded-full group-hover:bg-[#c5a059]/10 transition-colors" />
+        <div className="relative z-10">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-[#1a120b] flex items-center justify-center mb-4 md:mb-6 border border-[#c5a059]/10 shadow-lg group-hover:scale-110 transition-transform duration-500">
+                <Icon size={18} className="text-[#c5a059]" />
+            </div>
+            <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] mb-1 md:mb-2">{title}</p>
+            <h3 className="text-3xl md:text-4xl font-black text-[#1a150e] tracking-tighter italic uppercase mb-1 md:mb-2 group-hover:gold-text-gradient transition-all">{value}</h3>
+            <p className="text-slate-400 text-[8px] md:text-[9px] font-bold uppercase tracking-widest">{description}</p>
         </div>
     </div>
 );
 
-// -- Custom dark tooltip for recharts ------------------------------------
-const DarkTooltip = ({ active, payload, label }) => {
+const GoldTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-        <div className="bg-slate-800 border border-white/10 rounded-xl px-4 py-3 shadow-xl">
-            <p className="text-slate-400 text-xs mb-2 font-semibold">{label}</p>
+        <div className="bg-[#1a120b] border border-[#c5a059]/20 rounded-2xl px-6 py-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.3em] mb-3 italic">{label}</p>
             {payload.map((p, i) => (
-                <p key={i} style={{ color: p.color }} className="text-sm font-bold">
-                    {p.name}: {p.value}
-                </p>
+                <div key={i} className="flex items-center justify-between gap-6">
+                    <span className="text-slate-400 text-[10px] uppercase font-bold">{p.name}</span>
+                    <span className="text-white text-lg font-black italic">{p.value}</span>
+                </div>
             ))}
         </div>
     );
@@ -56,9 +51,9 @@ const AdminDashboard = () => {
     });
     const [userGrowth, setUserGrowth] = useState([]);
     const [integrityData, setIntegrityData] = useState([
-        { name: 'Normal', value: 85 },
-        { name: 'Flagged', value: 10 },
-        { name: 'Locked', value: 5 }
+        { name: 'SECURE', value: 85 },
+        { name: 'FLAGGED', value: 10 },
+        { name: 'BREACH', value: 5 }
     ]);
     const { token } = useSelector((state) => state.auth);
     const { user } = useSelector((state) => state.auth);
@@ -71,8 +66,8 @@ const AdminDashboard = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const [statsRes, growthRes] = await Promise.all([
-                axios.get('https://educbt-pro-backend.onrender.com/school/dashboard/stats', config),
-                axios.get('https://educbt-pro-backend.onrender.com/school/analytics/user-growth', config)
+                axios.get('http://localhost:2000/school/dashboard/stats', config),
+                axios.get('http://localhost:2000/school/analytics/user-growth', config)
             ]);
             setStats(statsRes.data);
             setUserGrowth(growthRes.data);
@@ -82,114 +77,102 @@ const AdminDashboard = () => {
     };
 
     const kpiCards = [
-        { title: 'Total Teachers', value: stats.totalTeachers, icon: Users, gradient: 'from-indigo-500 to-purple-600', glow: 'bg-indigo-500' },
-        { title: 'Total Students', value: stats.totalStudents, icon: GraduationCap, gradient: 'from-emerald-500 to-teal-600', glow: 'bg-emerald-500' },
-        { title: 'Pending Approvals', value: stats.pendingApprovals, icon: Clock, gradient: 'from-amber-500 to-orange-600', glow: 'bg-amber-500' },
-        { title: 'Active Exams', value: stats.activeExams, icon: Zap, gradient: 'from-blue-500 to-cyan-600', glow: 'bg-blue-500' },
+        { title: 'Faculty Assets', value: stats.totalTeachers, icon: Users, description: 'Verified Academic Staff' },
+        { title: 'Student Registry', value: stats.totalStudents, icon: GraduationCap, description: 'Enrolled Assessment Subjects' },
+        { title: 'Pending Clearance', value: stats.pendingApprovals, icon: Clock, description: 'Enrollment Requests' },
+        { title: 'Live Nodes', value: stats.activeExams, icon: Activity, description: 'Active Examination Sessions' },
     ];
 
     return (
         <AdminLayout>
-            <div className="space-y-8">
-
-                {/* -- Welcome banner ----------------------------------- */}
-                <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent p-6 md:p-8">
-                    <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 bg-indigo-500 -translate-y-1/2 translate-x-1/2" />
-                    {/* Dot grid */}
-                    <div className="absolute inset-0 opacity-5"
-                        style={{
-                            backgroundImage: 'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)',
-                            backgroundSize: '22px 22px'
-                        }}
-                    />
-                    <div className="relative z-10">
-                        <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1 mb-4">
-                            <Zap size={12} className="text-indigo-400" />
-                            <span className="text-indigo-300 text-xs font-semibold">School Dashboard</span>
+            <div className="max-w-7xl mx-auto space-y-10 pb-20 font-outfit">
+                {/* Dashboard Header */}
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 py-4 md:py-6">
+                    <div className="space-y-3 animate-fade-in-up">
+                        <div className="inline-flex items-center gap-3 bg-white border border-slate-100 rounded-full px-4 py-2 shadow-sm">
+                            <ShieldCheck size={14} className="text-[#c5a059]" />
+                            <span className="text-[#a18146] text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em]">Institutional Command Center</span>
                         </div>
-                        <h1 className="text-2xl md:text-3xl font-black text-white mb-1">
-                            Good morning, <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">{user?.schoolName || 'Admin'}</span> ??
+                        <h1 className="text-3xl md:text-5xl font-black text-[#1a150e] leading-none tracking-tighter uppercase italic">
+                            Operational <span className="gold-text-gradient">Intelligence</span>
                         </h1>
-                        <p className="text-slate-400 text-sm">Here's an overview of your school's activity today.</p>
+                        <p className="text-slate-500 text-xs md:text-sm font-medium">Administrator: <span className="text-[#1a150e] font-black">{user?.schoolName || 'KICC Portal'}</span> Branch Control.</p>
                     </div>
                 </div>
 
-                {/* -- KPI Cards ---------------------------------------- */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {kpiCards.map((card) => (
-                        <StatCard key={card.title} {...card} />
+                {/* KPI Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+                    {kpiCards.map((card, idx) => (
+                        <StatCard key={card.title} {...card} style={{ animationDelay: `${idx * 0.1}s` }} />
                     ))}
                 </div>
 
-                {/* -- Charts ------------------------------------------- */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                    {/* User Growth Bar Chart */}
-                    <div className="rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h3 className="text-base font-bold text-white">User Growth</h3>
-                                <p className="text-slate-400 text-xs mt-0.5">Students & teachers over time</p>
-                            </div>
-                            <div className="flex items-center gap-4 text-xs">
-                                <span className="flex items-center gap-1.5 text-slate-400">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Students
+                {/* Analytics Landscape */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+                    {/* Growth Analytics */}
+                    <div className="xl:col-span-2 premium-card p-6 md:p-10 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 md:mb-12">
+                             <div>
+                                <h3 className="text-lg md:text-xl font-black text-[#1a150e] tracking-tighter uppercase italic">Registry Expansion</h3>
+                                <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-1">Institutional demographic trajectory</p>
+                             </div>
+                             <div className="flex items-center gap-4 md:gap-6">
+                                <span className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-[#c5a059]" /> Students
                                 </span>
-                                <span className="flex items-center gap-1.5 text-slate-400">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" /> Teachers
+                                <span className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-[#1a120b]" /> Faculty
                                 </span>
-                            </div>
+                             </div>
                         </div>
-                        <div className="h-60">
+                        <div className="h-64 md:h-80 w-full overflow-hidden">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={userGrowth} barGap={4}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
-                                    <XAxis dataKey="_id" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                    <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                                    <Bar dataKey="students" name="Students" fill="#10B981" radius={[5, 5, 0, 0]} />
-                                    <Bar dataKey="teachers" name="Teachers" fill="#6366F1" radius={[5, 5, 0, 0]} />
+                                <BarChart data={userGrowth} barGap={12}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 900 }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 900 }} />
+                                    <Tooltip content={<GoldTooltip />} cursor={{ fill: '#f8fafc', radius: 12 }} />
+                                    <Bar dataKey="students" fill="#c5a059" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="teachers" fill="#1a120b" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
 
-                    {/* Exam Integrity Donut */}
-                    <div className="rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6">
-                        <div className="mb-6">
-                            <h3 className="text-base font-bold text-white">Exam Integrity</h3>
-                            <p className="text-slate-400 text-xs mt-0.5">Session behaviour overview</p>
+                    {/* Integrity Circle */}
+                    <div className="premium-card p-6 md:p-10 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+                        <div className="mb-8 md:mb-12">
+                            <h3 className="text-lg md:text-xl font-black text-[#1a150e] tracking-tighter uppercase italic">System Health</h3>
+                            <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-1">Heuristic behavior distribution</p>
                         </div>
-                        <div className="flex items-center gap-6">
-                            <div className="h-48 flex-1">
+                        <div className="flex flex-col items-center justify-center">
+                            <div className="h-52 md:h-60 w-full mb-6 md:mb-8">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={integrityData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={52}
-                                            outerRadius={72}
-                                            paddingAngle={4}
+                                            innerRadius={60}
+                                            outerRadius={85}
+                                            paddingAngle={8}
                                             dataKey="value"
                                             stroke="none"
                                         >
                                             {integrityData.map((_, index) => (
-                                                <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                                                <Cell key={index} fill={COLORS[index % COLORS.length]} cornerRadius={8} />
                                             ))}
                                         </Pie>
-                                        <Tooltip content={<DarkTooltip />} />
+                                        <Tooltip content={<GoldTooltip />} />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
-                            <div className="flex flex-col gap-3">
+                            <div className="w-full space-y-3">
                                 {integrityData.map((entry, i) => (
-                                    <div key={i} className="flex items-center gap-2.5">
-                                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[i] }} />
-                                        <div>
-                                            <p className="text-slate-300 text-sm font-semibold">{entry.name}</p>
-                                            <p className="text-slate-500 text-xs">{entry.value}%</p>
+                                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i] }} />
+                                            <span className="text-[#1a150e] text-[9px] font-black italic tracking-widest uppercase">{entry.name}</span>
                                         </div>
+                                        <span className="text-[#c5a059] text-[10px] font-black italic">{entry.value}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -197,73 +180,63 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                {/* -- Alerts & Term ------------------------------------ */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                    {/* System Alerts */}
-                    <div className="rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6">
-                        <h3 className="text-base font-bold text-white mb-5">System Alerts</h3>
-                        <div className="space-y-3">
-                            <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                                <AlertTriangle className="text-red-400 shrink-0 mt-0.5" size={18} />
+                {/* System Controls */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                    {/* Alerts Hub */}
+                    <div className="bg-[#1a120b] border border-[#c5a059]/20 rounded-3xl md:rounded-[3rem] p-6 md:p-10 shadow-2xl animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+                         <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-lg md:text-xl font-black text-white italic tracking-tighter uppercase leading-none">Global <span className="text-[#c5a059]">Alerts</span></h3>
+                            <Zap size={18} className="text-[#c5a059] animate-pulse" />
+                         </div>
+                         <div className="space-y-4">
+                            <div className="flex items-start gap-4 p-5 md:p-6 bg-white/5 border border-white/5 rounded-2xl md:rounded-3xl hover:bg-white/10 transition-all cursor-default">
+                                <AlertTriangle className="text-rose-500 shrink-0 mt-1" size={16} />
                                 <div>
-                                    <h4 className="font-bold text-red-300 text-sm">Exam Integrity Warning</h4>
-                                    <p className="text-red-400/70 text-xs mt-0.5">Multiple tab-switch incidents detected in Physics 101.</p>
+                                    <h4 className="font-black text-white text-xs md:text-sm italic uppercase tracking-tight">Security Anomalies</h4>
+                                    <p className="text-slate-500 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1 leading-relaxed">System detected unusual bypass attempts on Node Lagos-04.</p>
                                 </div>
                             </div>
                             {stats.pendingApprovals > 0 && (
-                                <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                                    <Clock className="text-amber-400 shrink-0 mt-0.5" size={18} />
+                                <div className="flex items-start gap-4 p-5 md:p-6 bg-[#c5a059]/10 border border-[#c5a059]/20 rounded-2xl md:rounded-3xl hover:bg-[#c5a059]/20 transition-all cursor-default">
+                                    <Clock className="text-[#c5a059] shrink-0 mt-1" size={16} />
                                     <div>
-                                        <h4 className="font-bold text-amber-300 text-sm">Pending Approvals</h4>
-                                        <p className="text-amber-400/70 text-xs mt-0.5">{stats.pendingApprovals} student(s) waiting for verification.</p>
+                                        <h4 className="font-black text-[#c5a059] text-xs md:text-sm italic uppercase tracking-tight">Governance Required</h4>
+                                        <p className="text-[#c5a059]/70 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1 leading-relaxed">{stats.pendingApprovals} academic personnel awaiting registry authorization.</p>
                                     </div>
                                 </div>
                             )}
-                            {stats.pendingApprovals === 0 && (
-                                <div className="flex items-start gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                                    <CheckCircle className="text-emerald-400 shrink-0 mt-0.5" size={18} />
-                                    <div>
-                                        <h4 className="font-bold text-emerald-300 text-sm">All Clear</h4>
-                                        <p className="text-emerald-400/70 text-xs mt-0.5">No pending approvals. Everything is up to date.</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                         </div>
                     </div>
 
-                    {/* Term Settings */}
-                    <div className="rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6">
-                        <h3 className="text-base font-bold text-white mb-5">Term Settings</h3>
-                        <div className="relative overflow-hidden rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-5">
-                            <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-2xl bg-indigo-500 opacity-10" />
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                                    <Clock size={18} className="text-indigo-400" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-200 text-sm">Current Term End Date</h4>
-                                    <p className="text-slate-400 text-xs">Set the date when this term closes.</p>
+                    {/* Cycle Management */}
+                    <div className="premium-card p-6 md:p-10 animate-fade-in-up relative overflow-hidden" style={{ animationDelay: '0.7s' }}>
+                        <div className="relative z-10 flex flex-col h-full">
+                            <h3 className="text-lg md:text-xl font-black text-[#1a150e] tracking-tighter uppercase italic mb-8 md:mb-10">Cycle Control</h3>
+                            <div className="bg-slate-50 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-slate-100 flex-1 flex flex-col justify-center">
+                                <label className="block text-[#1a150e]/40 text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] mb-4">Academic Term Termination Node</label>
+                                <input
+                                    type="date"
+                                    className="w-full h-12 md:h-14 px-4 md:px-6 bg-white border border-slate-200 rounded-xl md:rounded-2xl text-[#1a150e] text-xs md:text-sm font-black italic focus:border-[#c5a059] outline-none transition-all shadow-sm"
+                                    value={stats.currentTermEndDate ? new Date(stats.currentTermEndDate).toISOString().split('T')[0] : ''}
+                                    onChange={async (e) => {
+                                        try {
+                                            const newDate = e.target.value;
+                                            await axios.post('http://localhost:2000/school/term/update',
+                                                { termEndDate: newDate },
+                                                { headers: { Authorization: `Bearer ${token}` } }
+                                            );
+                                            toast.success('Registry Cycle Updated');
+                                            setStats(prev => ({ ...prev, currentTermEndDate: newDate }));
+                                        } catch {
+                                            toast.error('Synchronization Failure');
+                                        }
+                                    }}
+                                />
+                                <div className="mt-6 md:mt-8 flex items-center gap-3 md:gap-4 p-4 bg-[#c5a059]/5 rounded-xl md:rounded-2xl border border-[#c5a059]/10">
+                                    <Zap size={14} className="text-[#c5a059]" />
+                                    <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-[0.1em] leading-relaxed">System will automatically initialize archive protocols upon target date reaching.</p>
                                 </div>
                             </div>
-                            <input
-                                type="date"
-                                className="w-full px-4 py-2.5 bg-slate-900/60 border border-white/10 rounded-xl text-slate-200 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none transition-all"
-                                value={stats.currentTermEndDate ? new Date(stats.currentTermEndDate).toISOString().split('T')[0] : ''}
-                                onChange={async (e) => {
-                                    try {
-                                        const newDate = e.target.value;
-                                        await axios.post('https://educbt-pro-backend.onrender.com/school/term/update',
-                                            { termEndDate: newDate },
-                                            { headers: { Authorization: `Bearer ${token}` } }
-                                        );
-                                        toast.success('Term date updated');
-                                        setStats(prev => ({ ...prev, currentTermEndDate: newDate }));
-                                    } catch {
-                                        toast.error('Failed to update term');
-                                    }
-                                }}
-                            />
                         </div>
                     </div>
                 </div>

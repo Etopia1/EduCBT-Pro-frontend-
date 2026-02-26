@@ -6,14 +6,13 @@ import SubjectCoverage from './landing/SubjectCoverage';
 import HowItWorks from './landing/HowItWorks';
 import StudentGallery from './landing/StudentGallery';
 import Testimonials from './landing/Testimonials';
-import Pricing from './landing/Pricing';
 import FAQ from './landing/FAQ';
 import CallToAction from './landing/CallToAction';
 import Footer from './landing/Footer';
 
 export default function LandingPage() {
     return (
-        <div className="bg-slate-950 min-h-screen">
+        <div className="bg-[#FCFBFA] min-h-screen">
             <Navbar />
             <Hero />
             <Stats />
@@ -22,7 +21,6 @@ export default function LandingPage() {
             <HowItWorks />
             <StudentGallery />
             <Testimonials />
-            <Pricing />
             <FAQ />
             <CallToAction />
             <Footer />

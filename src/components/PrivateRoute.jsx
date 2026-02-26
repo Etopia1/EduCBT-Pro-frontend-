@@ -9,7 +9,7 @@ const PrivateRoute = ({ children, role }) => {
 
     if (!rehydrated || loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-950">
+            <div className="min-h-screen flex items-center justify-center bg-[#FCFBFA]">
                 <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-500 animate-spin" />
             </div>
         );

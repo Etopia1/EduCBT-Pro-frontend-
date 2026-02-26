@@ -72,7 +72,7 @@ export default function Pricing() {
     const navigate = useNavigate();
 
     return (
-        <section id="pricing" className="py-24 bg-slate-950 relative overflow-hidden">
+        <section id="pricing" className="py-24 bg-[#FCFBFA] relative overflow-hidden">
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

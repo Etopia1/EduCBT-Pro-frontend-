@@ -12,105 +12,80 @@ import {
 const features = [
     {
         icon: ClipboardList,
-        title: 'Smart Exam Builder',
-        desc: 'Create MCQ, theory, and mixed-format exams with timed sections, question banks, and randomization.',
-        color: 'from-indigo-500 to-indigo-600',
-        bg: 'from-indigo-500/10 to-indigo-600/5',
-        border: 'border-indigo-500/20',
+        title: 'Exam Engineering',
+        desc: 'Advanced module for creating complex MCQ, Theory, and Hybrid assessments with ease.',
     },
     {
         icon: Eye,
-        title: 'AI-Powered Proctoring',
-        desc: 'Real-time face detection, eye tracking, and tab-switch monitoring ensure exam integrity automatically.',
-        color: 'from-purple-500 to-purple-600',
-        bg: 'from-purple-500/10 to-purple-600/5',
-        border: 'border-purple-500/20',
+        title: 'Integrity Protocol',
+        desc: 'Built-in detection systems and time-lapse monitoring for maximum exam security.',
     },
     {
         icon: BarChart2,
-        title: 'Deep Analytics',
-        desc: "Detailed per-student and per-class reports give teachers instant insight into performance trends.",
-        color: 'from-pink-500 to-pink-600',
-        bg: 'from-pink-500/10 to-pink-600/5',
-        border: 'border-pink-500/20',
+        title: 'Data Intelligence',
+        desc: "Comprehensive performance visualizations for students and academic faculty.",
     },
     {
         icon: Clock,
-        title: 'Instant Auto-Grading',
-        desc: 'Objective questions are graded the moment students submit, with results available immediately.',
-        color: 'from-amber-500 to-orange-500',
-        bg: 'from-amber-500/10 to-orange-500/5',
-        border: 'border-amber-500/20',
+        title: 'Rapid Evaluation',
+        desc: 'Instant scoring for objective questions with immediate result distribution.',
     },
     {
         icon: ShieldCheck,
-        title: 'Violation Alerts',
-        desc: 'Teachers receive live alerts the moment suspicious activity is detected during an ongoing exam.',
-        color: 'from-emerald-500 to-teal-500',
-        bg: 'from-emerald-500/10 to-teal-500/5',
-        border: 'border-emerald-500/20',
+        title: 'Proactive Guard',
+        desc: 'Real-time notifications sent to proctors when session violations are detected.',
     },
     {
         icon: Users,
-        title: 'Multi-Role Management',
-        desc: 'Separate portals for admins, teachers, and students with fine-grained access controls.',
-        color: 'from-cyan-500 to-sky-500',
-        bg: 'from-cyan-500/10 to-sky-500/5',
-        border: 'border-cyan-500/20',
+        title: 'Governance Control',
+        desc: 'Robust role-based access for students, instructors, and system administrators.',
     },
     {
         icon: FileText,
-        title: 'PDF Report Export',
-        desc: 'Generate and download professional exam result reports and receipts in one click.',
-        color: 'from-violet-500 to-fuchsia-500',
-        bg: 'from-violet-500/10 to-fuchsia-500/5',
-        border: 'border-violet-500/20',
+        title: 'Export Systems',
+        desc: 'Professional PDF and Excel reporting for official records and script management.',
     },
     {
         icon: Smartphone,
-        title: 'Mobile Friendly',
-        desc: 'Students can take exams on any device — desktops, tablets, or phones — no app download needed.',
-        color: 'from-rose-500 to-pink-500',
-        bg: 'from-rose-500/10 to-pink-500/5',
-        border: 'border-rose-500/20',
+        title: 'Unified Access',
+        desc: 'Full desktop-to-mobile responsiveness for consistent assessment experiences.',
     },
 ];
 
 export default function Features() {
     return (
-        <section id="features" className="py-24 bg-slate-950 relative overflow-hidden">
-            {/* Subtle background glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
-
+        <section id="features" className="py-24 bg-[#fcfbf9] relative">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="text-center mb-16">
-                    <span className="inline-block text-indigo-400 text-sm font-semibold uppercase tracking-widest mb-4">
-                        Platform Features
+                <div className="text-center mb-20 animate-fade-in-up">
+                    <span className="inline-block text-[#c5a059] text-[10px] font-black uppercase tracking-[0.25em] mb-4">
+                        Core Capabilities
                     </span>
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4">
-                        Everything Your School Needs
+                    <h2 className="text-4xl md:text-5xl font-black text-[#1a150e] mb-6 italic uppercase tracking-tighter">
+                        INSTITUTIONAL <span className="gold-text-gradient">OPERATIONS</span>
                     </h2>
-                    <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                        From exam creation to result analysis — EduCBT Pro handles the full lifecycle of
-                        computer-based testing with intelligence and ease.
+                    <div className="w-20 h-1.5 bg-[#c5a059] mx-auto rounded-full mb-8" />
+                    <p className="text-slate-500 text-sm sm:text-base max-w-xl mx-auto font-medium leading-relaxed">
+                        A centralized assessment ecosystem engineered to maintain global standards in digital testing and academic data management.
                     </p>
                 </div>
 
                 {/* Feature Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {features.map(({ icon: Icon, title, desc, color, bg, border }) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {features.map(({ icon: Icon, title, desc }, idx) => (
                         <div
                             key={title}
-                            className={`group relative bg-gradient-to-br ${bg} border ${border} rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300 cursor-default`}
+                            className="premium-card p-10 group animate-fade-in-up hover:-translate-y-2"
+                            style={{ animationDelay: `${0.1 * idx}s` }}
                         >
-                            <div
-                                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 transition-transform duration-300`}
-                            >
-                                <Icon size={22} className="text-white" />
+                            <div className="relative mb-8">
+                                <div className="absolute inset-0 bg-[#c5a059] blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
+                                <div className="relative w-14 h-14 rounded-2xl bg-[#1a120b] flex items-center justify-center border border-[#c5a059]/10 shadow-lg group-hover:rotate-12 transition-all duration-500">
+                                    <Icon size={24} className="text-[#e2c08d]" />
+                                </div>
                             </div>
-                            <h3 className="text-white font-bold text-base mb-2">{title}</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+                            <h3 className="text-[#1a150e] font-black text-lg mb-4 italic uppercase tracking-tighter group-hover:text-[#c5a059] transition-colors">{title}</h3>
+                            <p className="text-slate-500 text-[13px] leading-relaxed font-medium">{desc}</p>
                         </div>
                     ))}
                 </div>

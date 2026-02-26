@@ -1,493 +1,250 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
-import { BookOpen, MapPin, User, Mail, Lock, Plus, X, Phone, Building2, ArrowRight, CheckCircle, GraduationCap, Users } from 'lucide-react';
+import { useNavigate, useSearchParams, useParams, Link } from 'react-router-dom';
+import { BookOpen, MapPin, User, Mail, Lock, Plus, X, Phone, Building2, ArrowRight, CheckCircle, GraduationCap, Users, Activity, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const TeacherSignup = () => {
     const [searchParams] = useSearchParams();
-    const { token } = useParams(); // Using 'token' param effectively as 'schoolRefId' context or invite
-    // NOTE: If token is long (JWT/Invite), it's treated as invite. If short/format (REF-...), we treat as school link.
-
+    const { token } = useParams();
     const navigate = useNavigate();
-
-    // Fallback if they use the old ?schoolId query param
     const urlSchoolId = searchParams.get('schoolId');
 
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
         password: '',
-        confirmPassword: '',
-        schoolId: urlSchoolId || '',
-        location: '',
         phone: '',
-        gender: '',
-        dateOfBirth: '',
-        inviteCode: '' // Manual token entry
+        location: '',
+        subjects: [],
+        experienceYears: '',
+        qualifications: '',
+        schoolId: urlSchoolId || token || '',
     });
 
-    const [profilePicture, setProfilePicture] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(null);
-
-    const [subjects, setSubjects] = useState(['']);
-    const [schools, setSchools] = useState([]);
+    const [subjectInput, setSubjectInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-
-    // State for School Info & Validation
     const [schoolInfo, setSchoolInfo] = useState(null);
-    const [isCheckingInfo, setIsCheckingInfo] = useState(!!token);
 
     useEffect(() => {
-        // Fetch list of schools for dropdown selection (only if no token/id specific)
-        const fetchSchools = async () => {
-            try {
-                const res = await axios.get('https://educbt-pro-backend.onrender.com/school/list');
-                setSchools(res.data);
-            } catch (error) {
-                console.error("Failed to fetch schools");
+        const fetchSchool = async () => {
+            const id = urlSchoolId || token;
+            if (id) {
+                try {
+                    const res = await axios.get(`http://localhost:2000/school/${id}`);
+                    setSchoolInfo(res.data);
+                } catch (err) {
+                    console.error("School context error:", err);
+                }
             }
         };
-
-        if (!token && !urlSchoolId) fetchSchools();
-
-        // Handle URL Parameter (Could be Invite Token OR School Ref ID)
-        if (token) {
-            const verifyOrFetch = async () => {
-                setIsCheckingInfo(true);
-                try {
-                    // Try as Invite Token first
-                    // Note: If it's a Ref ID (REF-...), invite-info might fail or we should detect format?
-                    // Let's try invite-info endpoint which now supports schoolRefId fallback or we create new endpoint?
-                    // Actually, let's try `invite-info` first.
-                    try {
-                        const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/invite-info/${token}`);
-                        setSchoolInfo(res.data.school);
-                        setFormData(prev => ({
-                            ...prev,
-                            schoolId: res.data.school._id,
-                            inviteCode: token, // It is an invite token
-                            email: res.data.email || prev.email
-                        }));
-                    } catch (err) {
-                        // If invite-info fails, try as School Ref ID
-                        try {
-                            const resRef = await axios.get(`https://educbt-pro-backend.onrender.com/school/ref-info/${token}`);
-                            setSchoolInfo(resRef.data);
-                            setFormData(prev => ({
-                                ...prev,
-                                schoolId: resRef.data._id,
-                                // It is NOT an invite token, just a school link
-                            }));
-                        } catch (err2) {
-                            console.error("Link invalid");
-                            toast.error("Invalid School Link or Invite");
-                        }
-                    }
-                } finally {
-                    setIsCheckingInfo(false);
-                }
-            };
-            verifyOrFetch();
-        }
-        else if (urlSchoolId) {
-            const fetchSchoolInfo = async () => {
-                try {
-                    const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/public/${urlSchoolId}`);
-                    setSchoolInfo(res.data);
-                    setFormData(prev => ({ ...prev, schoolId: res.data._id }));
-                } catch (error) {
-                    console.error("Failed to fetch school info");
-                }
-            };
-            fetchSchoolInfo();
-        }
-    }, [token, urlSchoolId]);
+        fetchSchool();
+    }, [urlSchoolId, token]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubjectChange = (index, value) => {
-        const newSubjects = [...subjects];
-        newSubjects[index] = value;
-        setSubjects(newSubjects);
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setProfilePicture(file);
-            setPreviewUrl(URL.createObjectURL(file));
+    const addSubject = () => {
+        if (subjectInput && !formData.subjects.includes(subjectInput)) {
+            setFormData({ ...formData, subjects: [...formData.subjects, subjectInput] });
+            setSubjectInput('');
         }
     };
 
-    const addSubjectField = () => {
-        setSubjects([...subjects, '']);
-    };
-
-    const removeSubjectField = (index) => {
-        const newSubjects = subjects.filter((_, i) => i !== index);
-        setSubjects(newSubjects);
+    const removeSubject = (val) => {
+        setFormData({ ...formData, subjects: formData.subjects.filter(s => s !== val) });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (formData.subjects.length === 0) {
+            toast.error("Please add at least one subject node");
+            return;
+        }
+        
         setIsLoading(true);
-
-        if (formData.password !== formData.confirmPassword) {
-            toast.error("Passwords do not match");
-            setIsLoading(false);
-            return;
-        }
-
-        const validSubjects = subjects.filter(s => s.trim() !== '');
-        if (validSubjects.length === 0) {
-            toast.error("Please add at least one subject.");
-            setIsLoading(false);
-            return;
-        }
-
+        const loadingToast = toast.loading('Initializing Faculty Credentials...');
         try {
-            // Create FormData to send file
-            const data = new FormData();
-            Object.keys(formData).forEach(key => {
-                data.append(key, formData[key]);
-            });
-            data.append('subjects', JSON.stringify(validSubjects));
-            if (profilePicture) {
-                data.append('profilePicture', profilePicture);
-            }
-
-            await axios.post('https://educbt-pro-backend.onrender.com/school/signup/teacher', data, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            toast.success("Registration successful! Please login.");
+            await axios.post('http://localhost:2000/school/teacher/register', formData);
+            toast.dismiss(loadingToast);
+            toast.success('Faculty Registry Success! Awaiting Admin Clearance.');
             navigate('/login');
         } catch (error) {
-            toast.error(error.response?.data?.message || "Registration failed");
+            toast.dismiss(loadingToast);
+            toast.error(error.response?.data?.message || 'Registration failure');
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (isCheckingInfo) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen flex bg-white">
-            {/* LEFT SIDE: Branding Panel */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-indigo-900 overflow-hidden items-center justify-center">
-                {/* Dynamic Background */}
-                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat"></div>
-                <div className="absolute inset-0 bg-linear-to-br from-indigo-900/90 to-purple-900/90"></div>
+        <div className="min-h-screen bg-[#fcfbf9] flex items-center justify-center p-6 md:p-12 relative overflow-hidden font-outfit">
+             {/* Design Elements */}
+             <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-[#c5a059]/5 blur-[120px] rounded-full pointer-events-none" />
+             <div className="absolute bottom-[-10%] right-[-10%] w-[35rem] h-[35rem] bg-[#1a120b]/5 blur-[100px] rounded-full pointer-events-none" />
 
-                {/* Animated Shapes */}
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-                    <div className="absolute w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob -top-10 -left-10"></div>
-                    <div className="absolute w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob top-1/2 left-1/2 animation-delay-2000"></div>
-                    <div className="absolute w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob -bottom-10 -right-10 animation-delay-4000"></div>
-                </div>
-
-                <div className="relative z-10 p-12 text-center text-white max-w-lg">
-                    {schoolInfo ? (
-                        <>
-                            {schoolInfo.logoUrl && (
-                                <div className="mx-auto bg-white/10 backdrop-blur-md p-2 rounded-full mb-8 inline-flex items-center justify-center w-48 h-48 shadow-2xl border border-white/20 overflow-hidden">
-                                    <img
-                                        src={schoolInfo.logoUrl}
-                                        alt={schoolInfo.name}
-                                        className="w-full h-full object-cover rounded-full"
-                                    />
-                                </div>
-                            )}
-                            <h2 className="text-4xl font-extrabold tracking-tight mb-4">{schoolInfo.name}</h2>
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-indigo-100 font-medium">
-                                <GraduationCap size={18} />
-                                <span className="uppercase tracking-wide">Teacher Application</span>
-                            </div>
-                            <p className="mt-6 text-lg text-indigo-200 leading-relaxed">
-                                Join our academic staff. Please provide your details and registration code.
+            <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white border border-slate-100 rounded-[3.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden relative z-10 animate-fade-in-up">
+                
+                {/* Left Panel: Contextual Information */}
+                <div className="lg:w-2/5 bg-[#1a120b] p-12 md:p-16 flex flex-col justify-between relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#c5a059]/10 to-transparent pointer-events-none" />
+                    <div className="relative z-10">
+                        <Link to="/" className="inline-flex items-center gap-2 text-[#c5a059] text-[10px] font-black uppercase tracking-[0.2em] mb-12 hover:translate-x-1 transition-transform">
+                            <GraduationCap size={16} />
+                            Exit to Hub
+                        </Link>
+                        
+                        <div className="mb-12">
+                            <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none mb-6">
+                                Faculty <span className="text-[#c5a059]">Registry</span>
+                            </h2>
+                            <p className="text-slate-400 text-sm font-medium leading-relaxed italic">
+                                Initialize your credentials within the {schoolInfo?.schoolName ? <span className="text-[#c5a059] font-black">{schoolInfo.schoolName}</span> : 'institutional'} assessment network.
                             </p>
-                        </>
-                    ) : (
-                        <>
-                            <div className="mb-8 inline-flex p-8 rounded-full bg-white/10 backdrop-blur-md">
-                                <Building2 size={64} className="text-indigo-200" />
-                            </div>
-                            <h2 className="text-4xl font-bold mb-4">Teacher Portal</h2>
-                            <p className="text-indigo-200 text-lg">
-                                Register to manage classes and assessments.
-                            </p>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* RIGHT SIDE: Form */}
-            <div className="flex-1 overflow-y-auto h-screen bg-gray-50/50">
-                <div className="flex min-h-full flex-col justify-center py-10 px-4 sm:px-6 lg:px-20 xl:px-24">
-                    <div className="max-w-lg w-full mx-auto bg-white p-6 rounded-2xl shadow-xl shadow-indigo-100 border border-gray-100">
-
-                        <div className="mb-6">
-                            <h3 className="text-xl font-bold text-gray-900 mb-1">Create Account</h3>
-                            <p className="text-gray-500 text-xs">Faculty Registration Form</p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-
-                            {/* Profile Picture Upload */}
-                            <div className="flex justify-center pb-2">
-                                <div className="relative">
-                                    <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-indigo-300 flex items-center justify-center overflow-hidden">
-                                        {previewUrl ? (
-                                            <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <User size={28} className="text-gray-400" />
-                                        )}
+                        <div className="space-y-8">
+                            {[
+                                { icon: ShieldCheck, title: 'Verified Status', desc: 'Secure credential verification for all faculty nodes.' },
+                                { icon: Activity, title: 'Network Sync', desc: 'Real-time synchronization with institutional repositories.' },
+                                { icon: BookOpen, title: 'Vault Access', desc: 'Authorized deployment of assessment scripts.' }
+                            ].map((item, i) => (
+                                <div key={i} className="flex gap-5 group/item">
+                                    <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#c5a059] group-hover/item:bg-[#c5a059] group-hover/item:text-[#1a120b] transition-all">
+                                        <item.icon size={18} />
                                     </div>
-                                    <label className="absolute bottom-0 right-0 bg-indigo-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-indigo-700 transition-colors shadow-md">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleFileChange}
-                                            className="hidden"
-                                        />
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Reg Number & Phone */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Phone Only Row for layout balance if Reg Num removed? Or full width? */}
-                                <div className="space-y-1 md:col-span-2">
-                                    <div className="relative group">
-                                        <Phone className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                                        <input
-                                            type="tel" name="phone" required
-                                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm"
-                                            placeholder="Phone Number"
-                                            value={formData.phone} onChange={handleChange}
-                                        />
+                                    <div>
+                                        <h4 className="text-white text-xs font-black uppercase tracking-widest mb-1 italic">{item.title}</h4>
+                                        <p className="text-slate-500 text-[11px] font-medium leading-relaxed">{item.desc}</p>
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Gender & DOB Row */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">Gender</label>
-                                    <div className="relative">
-                                        <select
-                                            name="gender" required
-                                            className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm appearance-none cursor-pointer"
-                                            value={formData.gender || ''}
-                                            onChange={handleChange}
-                                        >
-                                            <option value="">Select...</option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">Date of Birth</label>
-                                    <input
-                                        type="date" name="dateOfBirth" required
-                                        className="w-full pl-3 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm"
-                                        value={formData.dateOfBirth || ''} onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Name & Email Row */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">Full Name</label>
-                                    <div className="relative group">
-                                        <User className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                                        <input
-                                            type="text" name="fullName" required
-                                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm"
-                                            placeholder="Name"
-                                            value={formData.fullName} onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">Email</label>
-                                    <div className="relative group">
-                                        <Mail className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                                        <input
-                                            type="email" name="email" required
-                                            className={`w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm ${formData.inviteCode ? 'opacity-70' : ''}`}
-                                            placeholder="Email"
-                                            value={formData.email} onChange={handleChange}
-                                            readOnly={!!formData.inviteCode}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Location & Class Row */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">Location</label>
-                                    <div className="relative group">
-                                        <MapPin className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                                        <input
-                                            type="text" name="location" required
-                                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm"
-                                            placeholder="City"
-                                            value={formData.location} onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">Class</label>
-                                    <div className="relative">
-                                        <select
-                                            name="classLevel"
-                                            className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm appearance-none cursor-pointer"
-                                            value={formData.classLevel || ''}
-                                            onChange={handleChange}
-                                        >
-                                            <option value="">Select...</option>
-                                            <option value="JSS 1">JSS 1</option>
-                                            <option value="JSS 2">JSS 2</option>
-                                            <option value="JSS 3">JSS 3</option>
-                                            <option value="SS 1">SS 1</option>
-                                            <option value="SS 2">SS 2</option>
-                                            <option value="SS 3">SS 3</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* School Selection - Hidden if Info is Loaded */}
-                            {!schoolInfo && (
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">School</label>
-                                    <div className="relative group">
-                                        <Building2 className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                                        <select
-                                            name="schoolId"
-                                            value={formData.schoolId}
-                                            onChange={handleChange}
-                                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm appearance-none cursor-pointer"
-                                            required
-                                        >
-                                            <option value="">Select School...</option>
-                                            {schools.map(s => (
-                                                <option key={s._id} value={s._id}>{s.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Subjects */}
-                            <div className="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 mt-2">
-                                <div className="flex justify-between items-end mb-2">
-                                    <label className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1">
-                                        <BookOpen size={14} className="text-indigo-600" /> Subjects
-                                    </label>
-                                    <button
-                                        type="button"
-                                        onClick={addSubjectField}
-                                        className="text-[10px] font-bold bg-white border border-indigo-200 text-indigo-600 px-2 py-1 rounded-md shadow-xs hover:bg-indigo-50 transition-colors"
-                                    >
-                                        + Add
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 max-h-20 overflow-y-auto pr-1 custom-scrollbar">
-                                    {subjects.map((subject, index) => (
-                                        <div key={index} className="flex gap-1">
-                                            <input
-                                                type="text"
-                                                className="flex-1 min-w-0 px-2 py-1 bg-white border border-indigo-200 rounded-md text-xs"
-                                                placeholder={`Sub ${index + 1}`}
-                                                value={subject}
-                                                onChange={(e) => handleSubjectChange(index, e.target.value)}
-                                                required
-                                            />
-                                            {subjects.length > 1 && (
-                                                <button type="button" onClick={() => removeSubjectField(index)} className="text-rose-500"><X size={12} /></button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Password Row */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">Password</label>
-                                    <div className="relative group">
-                                        <Lock className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                                        <input
-                                            type="password" name="password" required
-                                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm"
-                                            placeholder="••••••"
-                                            value={formData.password} onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider ml-1">Confirm</label>
-                                    <div className="relative group">
-                                        <Lock className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                                        <input
-                                            type="password" name="confirmPassword" required
-                                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-hidden text-gray-800 font-medium text-sm"
-                                            placeholder="••••••"
-                                            value={formData.confirmPassword} onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full bg-linear-to-r from-indigo-600 to-purple-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.01] transform transition-all duration-200 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-3"
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        <span className="text-sm">Registering...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="text-sm">Submit Application</span>
-                                        <ArrowRight size={18} />
-                                    </>
-                                )}
-                            </button>
-
-                            <p className="text-center text-sm text-gray-600 font-medium mt-4">
-                                Already have an account? <a href="/#/login" className="text-indigo-600 hover:text-indigo-700 hover:underline">Sign in</a>
-                            </p>
-                        </form>
+                            ))}
+                        </div>
                     </div>
+
+                    <div className="relative z-10 pt-12 border-t border-white/5">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-[#c5a059]/20 flex items-center justify-center border border-[#c5a059]/30">
+                                <Users size={16} className="text-[#c5a059]" />
+                            </div>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Join 1,000+ Verified Educators</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Panel: Data Entry */}
+                <div className="lg:w-3/5 p-10 md:p-16 overflow-y-auto custom-scrollbar">
+                    <form onSubmit={handleSubmit} className="space-y-8 max-w-lg mx-auto">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Personal Nomenclature</label>
+                            <div className="relative group/input">
+                                <User size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                <input name="fullName" value={formData.fullName} onChange={handleChange} placeholder="FULL LEGAL NAME" required className="input-field pl-14" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Digital Channel</label>
+                                <div className="relative group/input">
+                                    <Mail size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                    <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="EMAIL@DOMAIN.COM" required className="input-field pl-14" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Secure Link</label>
+                                <div className="relative group/input">
+                                    <Lock size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-[#c5a059] transition-colors" />
+                                    <input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="ACCESS KEY" required className="input-field pl-14" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Contact Line</label>
+                                <div className="relative">
+                                    <Phone size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <input name="phone" value={formData.phone} onChange={handleChange} placeholder="+234 CELLULAR" className="input-field pl-14" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Registry Domain</label>
+                                <div className="relative">
+                                    <Building2 size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <input name="schoolId" value={formData.schoolId} onChange={handleChange} placeholder="SCHOOL ID (Optional)" className="input-field pl-14" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Operational Location</label>
+                            <div className="relative">
+                                <MapPin size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                <input name="location" value={formData.location} onChange={handleChange} placeholder="CURRENT RESIDENCE/ZONE" className="input-field pl-14" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Subject Verticals</label>
+                            <div className="flex gap-3">
+                                <input 
+                                    value={subjectInput} 
+                                    onChange={(e) => setSubjectInput(e.target.value)} 
+                                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSubject())}
+                                    placeholder="ADD SUBJECT NODE" 
+                                    className="input-field flex-1 uppercase"
+                                />
+                                <button type="button" onClick={addSubject} className="w-14 h-14 bg-[#1a120b] text-[#c5a059] rounded-2xl flex items-center justify-center flex-shrink-0 transition-all active:scale-90 border border-[#c5a059]/10">
+                                    <Plus size={20} />
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {formData.subjects.map((sub, i) => (
+                                    <span key={i} className="px-4 py-2 bg-slate-50 text-slate-600 text-[10px] font-black rounded-lg flex items-center gap-2 border border-slate-100 uppercase italic">
+                                        {sub}
+                                        <X size={12} className="cursor-pointer hover:text-rose-500 transition-colors" onClick={() => removeSubject(sub)} />
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                             <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Service Cycles</label>
+                                <input name="experienceYears" type="number" value={formData.experienceYears} onChange={handleChange} placeholder="YEARS" className="input-field" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Credential Rank</label>
+                                <input name="qualifications" value={formData.qualifications} onChange={handleChange} placeholder="M.Sc, B.Ed, ETC." className="input-field uppercase" />
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full h-16 bg-[#1a120b] hover:bg-black text-[#c5a059] font-black text-[11px] uppercase tracking-[0.25em] rounded-[1.25rem] transition-all shadow-2xl active:scale-95 border border-[#c5a059]/20 flex items-center justify-center gap-4 group"
+                        >
+                            {isLoading ? (
+                                <Activity size={20} className="animate-spin" />
+                            ) : (
+                                <>
+                                    Commit Credentials
+                                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                </>
+                            )}
+                        </button>
+
+                        <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            Existing Account?{' '}
+                            <Link to="/login" className="text-[#c5a059] hover:underline transition-all italic">Institutional Access</Link>
+                        </p>
+                    </form>
                 </div>
             </div>
         </div>
     );
 };
 
-
 export default TeacherSignup;
-

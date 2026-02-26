@@ -69,7 +69,7 @@ const StudentResultModal = ({ record, onClose, subjects }) => {
     const colorIndex = record.fullName.charCodeAt(0) % avatarColors.length;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#FCFBFA]/80 backdrop-blur-md" onClick={onClose}>
             <div
                 className="bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300"
                 onClick={e => e.stopPropagation()}
@@ -134,7 +134,7 @@ const StudentResultModal = ({ record, onClose, subjects }) => {
                                                     {s.total} — {s.grade}
                                                 </span>
                                             </div>
-                                            <div className="h-2 bg-slate-950 rounded-full overflow-hidden shadow-inner">
+                                            <div className="h-2 bg-[#FCFBFA] rounded-full overflow-hidden shadow-inner">
                                                 <div
                                                     className={`h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(0,0,0,0.5)] ${s.bar}`}
                                                     style={{ width: `${Math.min(s.total, 100)}%` }}
@@ -199,7 +199,7 @@ const StudentRecordsSpreadsheet = () => {
             setLoading(true);
             const params = {};
             if (classFilter !== 'all') params.classLevel = classFilter;
-            const res = await axios.get('https://educbt-pro-backend.onrender.com/student-records/with-permissions', {
+            const res = await axios.get('http://localhost:2000/student-records/with-permissions', {
                 headers,
                 params
             });
@@ -214,7 +214,7 @@ const StudentRecordsSpreadsheet = () => {
 
     const fetchResultTemplate = async () => {
         try {
-            const res = await axios.get('https://educbt-pro-backend.onrender.com/result-template', { headers });
+            const res = await axios.get('http://localhost:2000/result-template', { headers });
             setResultTemplate(res.data.template);
         } catch { /* no template yet */ }
     };
@@ -222,7 +222,7 @@ const StudentRecordsSpreadsheet = () => {
     const initializeClass = async () => {
         if (!classFilter || classFilter === 'all') { toast.error('Please select a specific class sector'); return; }
         try {
-            const res = await axios.post('https://educbt-pro-backend.onrender.com/student-records/initialize-class',
+            const res = await axios.post('http://localhost:2000/student-records/initialize-class',
                 { classLevel: classFilter, term: 'Current Term', academicYear: '2025/2026' },
                 { headers }
             );
@@ -234,7 +234,7 @@ const StudentRecordsSpreadsheet = () => {
     const publishSubject = async (subject, publish) => {
         if (!classFilter || classFilter === 'all') { toast.error('Please select a specific class sector'); return; }
         try {
-            const res = await axios.post('https://educbt-pro-backend.onrender.com/student-records/publish-subject',
+            const res = await axios.post('http://localhost:2000/student-records/publish-subject',
                 { classLevel: classFilter, subject: subject.label, publish },
                 { headers }
             );
@@ -254,7 +254,7 @@ const StudentRecordsSpreadsheet = () => {
         const { recordId, subject } = editingCell;
         const subjectLabel = subjects.find(s => s.key === subject)?.label;
         try {
-            await axios.put(`https://educbt-pro-backend.onrender.com/student-records/${recordId}/exam-score`,
+            await axios.put(`http://localhost:2000/student-records/${recordId}/exam-score`,
                 { subject: subjectLabel, score: parseFloat(tempValue) || 0 },
                 { headers }
             );
@@ -361,7 +361,7 @@ const StudentRecordsSpreadsheet = () => {
                                 <Plus size={16} className="group-hover:rotate-90 transition-transform" /> Initialize Node
                             </button>
                             
-                            <div className="flex gap-2 p-1.5 bg-slate-950/50 rounded-2xl border border-white/5">
+                            <div className="flex gap-2 p-1.5 bg-[#FCFBFA]/50 rounded-2xl border border-white/5">
                                 <button onClick={fetchRecords}
                                     title="Synchronize Data"
                                     className="p-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
@@ -379,7 +379,7 @@ const StudentRecordsSpreadsheet = () => {
                                 </button>
                             </div>
 
-                            <div className="flex p-1.5 bg-slate-950/50 rounded-2xl border border-white/5">
+                            <div className="flex p-1.5 bg-[#FCFBFA]/50 rounded-2xl border border-white/5">
                                 <button onClick={() => setView('cards')}
                                     className={`p-3 rounded-xl transition-all ${view === 'cards' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
                                     <LayoutGrid size={18} />
@@ -397,7 +397,7 @@ const StudentRecordsSpreadsheet = () => {
                         <div className="relative group">
                             <Filter size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                             <select value={classFilter} onChange={e => setClassFilter(e.target.value)}
-                                className="w-full pl-14 pr-6 h-14 bg-slate-950/50 border border-white/10 rounded-2xl focus:outline-none focus:border-indigo-500/50 font-black text-[10px] uppercase tracking-widest text-white italic cursor-pointer appearance-none">
+                                className="w-full pl-14 pr-6 h-14 bg-[#FCFBFA]/50 border border-white/10 rounded-2xl focus:outline-none focus:border-indigo-500/50 font-black text-[10px] uppercase tracking-widest text-white italic cursor-pointer appearance-none">
                                 <option value="all" className="bg-slate-900 border-none">All Sector Nodes</option>
                                 {['JSS 1','JSS 2','JSS 3','SS 1','SS 2','SS 3'].map(c => (
                                     <option key={c} value={c} className="bg-slate-900 border-none">{c} Sector</option>
@@ -409,7 +409,7 @@ const StudentRecordsSpreadsheet = () => {
                             <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                             <input type="text" placeholder="QUERY IDENTITY OR REGISTRY CODE..." value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="w-full pl-14 pr-6 h-14 bg-slate-950/50 border border-white/10 rounded-2xl focus:outline-none focus:border-indigo-500/50 text-[10px] font-black uppercase tracking-widest text-white placeholder:text-slate-600 italic" />
+                                className="w-full pl-14 pr-6 h-14 bg-[#FCFBFA]/50 border border-white/10 rounded-2xl focus:outline-none focus:border-indigo-500/50 text-[10px] font-black uppercase tracking-widest text-white placeholder:text-slate-600 italic" />
                         </div>
                     </div>
                 </div>
@@ -431,7 +431,7 @@ const StudentRecordsSpreadsheet = () => {
                                         className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest italic transition-all border ${
                                             published 
                                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' 
-                                            : 'bg-slate-950/50 text-slate-500 border-white/5 hover:border-white/20'
+                                            : 'bg-[#FCFBFA]/50 text-slate-500 border-white/5 hover:border-white/20'
                                         }`}>
                                         {published ? <Unlock size={14} /> : <Lock size={14} />}
                                         {subject.label} Matrix {published ? '(OPEN)' : '(LOCKED)'}
@@ -448,7 +448,7 @@ const StudentRecordsSpreadsheet = () => {
                 {/* -- Empty state -- */}
                 {filtered.length === 0 && (
                     <div className="bg-slate-900/40 backdrop-blur-xl rounded-[3rem] p-24 text-center border border-white/5 shadow-2xl group transition-all">
-                        <div className="w-24 h-24 bg-slate-950/50 border border-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner group-hover:scale-105 transition-transform">
+                        <div className="w-24 h-24 bg-[#FCFBFA]/50 border border-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner group-hover:scale-105 transition-transform">
                             <AlertCircle size={40} className="text-slate-700 group-hover:text-indigo-500/50 transition-colors" />
                         </div>
                         <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4">No Records Detected</h3>
@@ -494,7 +494,7 @@ const StudentRecordsSpreadsheet = () => {
                                             { label: 'Efficacy', value: `${avg.toFixed(1)}%`, icon: Activity },
                                             { label: 'Attendance', value: (record.attendanceScore || 0).toFixed(0), icon: BookOpen },
                                         ].map(({ label, value, icon: Icon }) => (
-                                            <div key={label} className="bg-slate-950/50 rounded-2xl p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors shadow-inner">
+                                            <div key={label} className="bg-[#FCFBFA]/50 rounded-2xl p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors shadow-inner">
                                                 <Icon size={14} className="text-slate-600 mx-auto mb-2 opacity-50" />
                                                 <p className="text-white font-black italic tracking-tighter text-lg">{value}</p>
                                                 <p className="text-slate-500 text-[8px] font-black uppercase tracking-widest mt-1">{label}</p>
@@ -508,7 +508,7 @@ const StudentRecordsSpreadsheet = () => {
                                             <span>Efficiency Baseline</span>
                                             <span className="text-indigo-400">{avg.toFixed(0)}%</span>
                                         </div>
-                                        <div className="h-2 bg-slate-950 rounded-full overflow-hidden shadow-inner border border-white/5">
+                                        <div className="h-2 bg-[#FCFBFA] rounded-full overflow-hidden shadow-inner border border-white/5">
                                             <div className={`h-full rounded-full transition-all duration-1000 ease-out shadow-lg ${bar}`} style={{ width: `${Math.min(avg, 100)}%` }} />
                                         </div>
                                     </div>
@@ -527,8 +527,8 @@ const StudentRecordsSpreadsheet = () => {
                                             disabled={!resultTemplate}
                                             className={`flex items-center justify-center w-12 h-12 rounded-2xl font-black text-sm transition-all border shrink-0 active:scale-95 ${
                                                 resultTemplate
-                                                    ? 'bg-slate-950/50 hover:bg-slate-900 text-purple-400 border-purple-500/20 hover:border-purple-500/40'
-                                                    : 'bg-slate-950/20 text-slate-700 border-white/5 cursor-not-allowed opacity-50'
+                                                    ? 'bg-[#FCFBFA]/50 hover:bg-slate-900 text-purple-400 border-purple-500/20 hover:border-purple-500/40'
+                                                    : 'bg-[#FCFBFA]/20 text-slate-700 border-white/5 cursor-not-allowed opacity-50'
                                             }`}>
                                             <FileSpreadsheet size={18} />
                                         </button>
@@ -545,7 +545,7 @@ const StudentRecordsSpreadsheet = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-950/50 border-b border-white/5">
+                                    <tr className="bg-[#FCFBFA]/50 border-b border-white/5">
                                         <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Identity Node</th>
                                         {subjects.map(s => {
                                             const mySubject = teachesSubject(s);
@@ -568,7 +568,7 @@ const StudentRecordsSpreadsheet = () => {
                                             <tr key={record._id} className="group hover:bg-white/5 transition-colors">
                                                 <td className="p-6">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 font-black text-xs border border-white/5">
+                                                        <div className="w-10 h-10 rounded-xl bg-[#FCFBFA] flex items-center justify-center text-slate-400 font-black text-xs border border-white/5">
                                                             {record.fullName.charAt(0)}
                                                         </div>
                                                         <div className="min-w-0">
@@ -594,7 +594,7 @@ const StudentRecordsSpreadsheet = () => {
                                                                             type="number"
                                                                             value={tempValue}
                                                                             onChange={e => setTempValue(e.target.value)}
-                                                                            className="w-14 h-8 bg-slate-950 border border-indigo-500/50 rounded-lg text-center text-white font-black text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                                            className="w-14 h-8 bg-[#FCFBFA] border border-indigo-500/50 rounded-lg text-center text-white font-black text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                                                             autoFocus
                                                                             onBlur={saveExamScore}
                                                                             onKeyDown={e => e.key === 'Enter' && saveExamScore()}
@@ -623,10 +623,10 @@ const StudentRecordsSpreadsheet = () => {
                                                 </td>
                                                 <td className="p-6 text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <button onClick={() => setSelectedStudent(record)} className="p-2.5 bg-slate-950/50 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/5 transition-all active:scale-90">
+                                                        <button onClick={() => setSelectedStudent(record)} className="p-2.5 bg-[#FCFBFA]/50 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/5 transition-all active:scale-90">
                                                             <Eye size={16} />
                                                         </button>
-                                                        <button onClick={() => downloadResult(record)} className="p-2.5 bg-slate-950/50 hover:bg-purple-500/10 text-purple-400 hover:text-purple-300 rounded-xl border border-purple-500/10 transition-all active:scale-90">
+                                                        <button onClick={() => downloadResult(record)} className="p-2.5 bg-[#FCFBFA]/50 hover:bg-purple-500/10 text-purple-400 hover:text-purple-300 rounded-xl border border-purple-500/10 transition-all active:scale-90">
                                                             <FileSpreadsheet size={16} />
                                                         </button>
                                                     </div>

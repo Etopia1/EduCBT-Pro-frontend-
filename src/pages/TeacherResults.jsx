@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import TeacherLayout from '../components/TeacherLayout';
 import { 
     FileText, Users, Download, Search, Filter, 
-    TrendingUp, Award, BarChart3, AlertCircle, CheckCircle2 
+    TrendingUp, Award, BarChart3, AlertCircle, CheckCircle2, ChevronDown, Activity, ArrowUpRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -32,7 +32,7 @@ const TeacherResults = () => {
     const fetchExams = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/teacher/all', {
+            const res = await axios.get('http://localhost:2000/exam/teacher/all', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExams(res.data);
@@ -49,12 +49,11 @@ const TeacherResults = () => {
 
     const fetchResults = async (examId) => {
         try {
-            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}/sessions`, {
+            const res = await axios.get(`http://localhost:2000/exam/${examId}/sessions`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // Filter only completed sessions
             const completedSessions = res.data.filter(
-                session => (session.status === 'completed' || session.status === 'terminated') && session.hasStarted
+                session => (session.status === 'completed' || session.status === 'terminated') && (session.score !== undefined)
             );
             setResults(completedSessions);
         } catch (error) {
@@ -63,42 +62,35 @@ const TeacherResults = () => {
         }
     };
 
-    const exportToCSV = () => {
-        if (results.length === 0) {
-            toast.error('No results to export');
-            return;
+    const handleBackendExport = async (format) => {
+        if (!selectedExam) return;
+        const loadingToast = toast.loading(`Preparing ${format.toUpperCase()} export...`);
+        try {
+            const res = await axios.get(`http://localhost:2000/exam/${selectedExam._id}/export-results?format=${format}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob'
+            });
+            
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${selectedExam.title}_results.${format}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.success('Export successful', { id: loadingToast });
+        } catch (error) {
+            console.error('Export Error:', error);
+            toast.error('Failed to export from server', { id: loadingToast });
         }
-
-        const headers = ['Student Name', 'Registration Number', 'Class', 'Score', 'Total Marks', 'Percentage', 'Status', 'Violations', 'Submission Time'];
-        const csvData = results.map(result => [
-            result.student.name,
-            result.student.registrationNumber || 'N/A',
-            result.student.classLevel,
-            result.score?.toFixed(2) || '0',
-            selectedExam?.totalMarks || '100',
-            result.percentage?.toFixed(2) || '0',
-            result.status,
-            result.violationCount || '0',
-            result.submittedAt ? new Date(result.submittedAt).toLocaleString() : 'N/A'
-        ]);
-
-        const csv = [headers, ...csvData]
-            .map(row => row.map(cell => `"${cell}"`).join(','))
-            .join('\n');
-
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${selectedExam?.title || 'exam'}_results_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        toast.success('Results exported successfully!');
     };
 
     const filteredResults = results.filter(result => {
-        const matchesSearch = result.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            result.student.registrationNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+        const studentName = result.user?.fullName || result.student?.name || 'Unknown';
+        const regNum = result.user?.info?.registrationNumber || result.student?.registrationNumber || '';
+        
+        const matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            regNum.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesFilter = filterStatus === 'all' || result.status === filterStatus;
 
@@ -122,11 +114,9 @@ const TeacherResults = () => {
     if (loading) {
         return (
             <TeacherLayout>
-                <div className="flex items-center justify-center min-h-[60vh]">
-                     <div className="relative">
-                        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-                        <div className="absolute inset-0 bg-indigo-500/20 blur-xl animate-pulse rounded-full"></div>
-                     </div>
+                <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-pulse">
+                    <div className="w-16 h-16 border-4 border-[#c5a059]/10 border-t-[#c5a059] rounded-full animate-spin" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">Syncing Analytics Cloud</p>
                 </div>
             </TeacherLayout>
         );
@@ -134,193 +124,182 @@ const TeacherResults = () => {
 
     return (
         <TeacherLayout>
-            <div className="max-w-7xl mx-auto space-y-10 pb-20 animate-in fade-in duration-700">
-                {/* Header & Controls */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 relative">
-                    <div className="absolute -top-24 -left-20 w-64 h-64 bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none" />
-                    <div className="flex-1">
-                        <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1 mb-4">
-                            <BarChart3 size={12} className="text-indigo-400" />
-                            <span className="text-indigo-300 text-[10px] font-black uppercase tracking-widest">Performance Intelligence</span>
+            <div className="max-w-7xl mx-auto space-y-12 pb-24 px-4 sm:px-6">
+                {/* Header Section */}
+                <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-10">
+                    <div className="space-y-6 flex-1">
+                        <div className="inline-flex items-center gap-2 bg-gold-50 border border-[#c5a059]/20 rounded-full px-4 py-1.5">
+                            <Activity size={12} className="text-[#c5a059]" />
+                            <span className="text-[#a18146] text-[10px] font-black uppercase tracking-widest italic">Performance Analysis Nexus</span>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-black text-white italic tracking-tight uppercase">
-                            Analysis <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Nexus</span>
+                        <h1 className="text-4xl md:text-5xl font-black text-[#1a150e] leading-none tracking-tight uppercase italic">
+                            Intelligence <span className="gold-text-gradient">Engine</span>
                         </h1>
                         
-                        <div className="mt-6 space-y-2 max-w-lg">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Active Data Stream</label>
+                        <div className="max-w-xl space-y-3">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] ml-1">Secure Assessment Feed</label>
                             <div className="relative group">
-                                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-indigo-400 transition-colors" size={20} />
+                                <FileText className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#c5a059] transition-colors" size={20} />
                                 <select
                                     value={selectedExam?._id || ''}
                                     onChange={(e) => {
                                         const exam = exams.find(ex => ex._id === e.target.value);
                                         setSelectedExam(exam);
                                     }}
-                                    className="w-full pl-12 pr-10 py-4 bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/40 text-white font-bold appearance-none cursor-pointer shadow-inner"
+                                    className="w-full pl-14 pr-12 py-5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-[#c5a059] text-[#1a150e] font-black italic shadow-sm appearance-none cursor-pointer group-hover:bg-slate-50 transition-all uppercase text-sm tracking-tighter"
                                 >
                                     {exams.map(exam => (
-                                        <option key={exam._id} value={exam._id} className="bg-slate-900">
-                                            {exam.title} ({exam.classLevel})
+                                        <option key={exam._id} value={exam._id}>
+                                            {exam.title.toUpperCase()} — {exam.classLevel || 'GENERAL'}
                                         </option>
                                     ))}
                                 </select>
+                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none group-hover:text-[#c5a059] transition-all" size={20} />
                             </div>
                         </div>
                     </div>
 
-                    <button
-                        onClick={exportToCSV}
-                        disabled={results.length === 0}
-                        className="group flex items-center gap-3 bg-emerald-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-900/20 hover:bg-emerald-500 hover:shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale transition-all"
-                    >
-                        <Download size={18} className="group-hover:-translate-y-1 transition-transform" />
-                        Export Dataset
-                    </button>
+                    <div className="flex flex-wrap items-center gap-4">
+                        <button
+                            onClick={() => handleBackendExport('pdf')}
+                            disabled={results.length === 0}
+                            className="bg-[#1a120b] text-[#c5a059] px-8 h-16 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-black/10 hover:bg-black transition-all active:scale-95 flex items-center gap-3 disabled:opacity-20"
+                        >
+                            <FileText size={18} /> Export PDF Report
+                        </button>
+                        <button
+                            onClick={() => handleBackendExport('csv')}
+                            disabled={results.length === 0}
+                            className="bg-white border border-slate-200 text-[#1a150e] px-8 h-16 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-3 disabled:opacity-20 shadow-sm"
+                        >
+                            <Download size={18} /> CSV Dataset
+                        </button>
+                    </div>
                 </div>
 
-                {/* Statistics Modules */}
+                {/* Metrics Grid */}
                 {selectedExam && results.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            { label: 'Average Score', value: stats.avgScore.toFixed(1), total: selectedExam.totalMarks, perc: ((stats.avgScore / selectedExam.totalMarks) * 100).toFixed(1), icon: TrendingUp, color: 'indigo' },
-                            { label: 'Prime Score', value: stats.highestScore.toFixed(1), total: selectedExam.totalMarks, perc: ((stats.highestScore / selectedExam.totalMarks) * 100).toFixed(1), icon: Award, color: 'amber' },
-                            { label: 'Floor Score', value: stats.lowestScore.toFixed(1), total: selectedExam.totalMarks, perc: ((stats.lowestScore / selectedExam.totalMarks) * 100).toFixed(1), icon: AlertCircle, color: 'rose' },
-                            { label: 'Success Rate', value: `${stats.passRate.toFixed(1)}%`, sub: `${results.filter(r => (r.percentage || 0) >= 50).length} of ${results.length} Passed`, icon: Users, color: 'emerald' }
+                            { label: 'Avg Efficiency', value: stats.avgScore.toFixed(1), total: selectedExam.totalMarks, icon: TrendingUp },
+                            { label: 'Peak Script', value: stats.highestScore.toFixed(1), total: selectedExam.totalMarks, icon: Award },
+                            { label: 'Baseline Unit', value: stats.lowestScore.toFixed(1), total: selectedExam.totalMarks, icon: AlertCircle },
+                            { label: 'Global Clearance', value: `${stats.passRate.toFixed(1)}%`, sub: `Pass Ratio`, icon: Users }
                         ].map((stat, idx) => (
-                            <div key={idx} className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 group hover:border-indigo-500/20 transition-all overflow-hidden relative">
-                                <div className={`absolute -top-10 -right-10 w-32 h-32 bg-${stat.color}-500/5 blur-3xl rounded-full`} />
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</span>
-                                    <stat.icon size={20} className={`text-${stat.color}-500/50`} />
+                            <div key={idx} className="bg-white border border-slate-100 rounded-[2.5rem] p-8 group hover:border-[#c5a059]/30 transition-all shadow-sm">
+                                <div className="flex items-center justify-between mb-6">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</span>
+                                    <stat.icon size={18} className="text-slate-300 group-hover:text-[#c5a059] transition-colors" />
                                 </div>
-                                <div className="text-3xl font-black text-white italic tracking-tighter">
+                                <div className="text-3xl font-black text-[#1a150e] italic tracking-tighter uppercase leading-none">
                                     {stat.value}
-                                    {stat.total && <span className="text-sm font-bold text-slate-600 ml-1">/{stat.total}</span>}
+                                    {stat.total && <span className="text-sm font-bold text-slate-300 ml-2">/ {stat.total}</span>}
                                 </div>
-                                <div className={`text-[10px] font-black uppercase tracking-widest mt-2 ${stat.perc ? (parseFloat(stat.perc) >= 50 ? 'text-emerald-500' : 'text-rose-500') : 'text-slate-500'}`}>
-                                    {stat.perc ? `${stat.perc}% Efficiency` : stat.sub}
+                                <div className="mt-4 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#c5a059] animate-pulse" />
+                                    <span className="text-[9px] font-black text-[#c5a059] uppercase tracking-widest">Analytics Active</span>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
 
-                {/* Filters & Search Nexus */}
-                <div className="flex flex-col md:flex-row gap-4">
+                {/* Filters */}
+                <div className="flex flex-col lg:flex-row gap-6">
                     <div className="relative flex-1 group">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#c5a059] transition-colors" size={20} />
                         <input
                             type="text"
-                            placeholder="Identify student by name or reference ID..."
-                            className="w-full pl-14 pr-6 py-4.5 bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/40 text-slate-200 font-bold transition-all placeholder:text-slate-700 shadow-inner"
+                            placeholder="SEARCH BY IDENTITY OR REGISTRATION UNIT..."
+                            className="w-full pl-16 pr-6 py-5 bg-white border border-slate-200 rounded-2xl focus:border-[#c5a059] outline-none font-black text-[10px] uppercase tracking-widest italic transition-all shadow-sm placeholder:text-slate-300"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex bg-slate-900/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-xl w-full md:w-auto h-auto">
-                        <div className="flex items-center gap-3 px-4 py-2">
-                             <Filter size={16} className="text-slate-600" />
-                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Filter:</span>
-                        </div>
+                    <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Filter:</span>
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="bg-transparent text-slate-300 font-black text-[10px] uppercase tracking-widest outline-none pr-4 cursor-pointer"
+                            className="bg-white text-[#1a150e] font-black text-[10px] uppercase tracking-widest outline-none px-6 py-3 rounded-xl cursor-pointer border border-slate-200 shadow-sm"
                         >
-                            <option value="all" className="bg-slate-900">All Nodes</option>
-                            <option value="completed" className="bg-slate-900">Finalized</option>
-                            <option value="terminated" className="bg-slate-900">Terminated</option>
+                            <option value="all">Global Matrix</option>
+                            <option value="completed">Finalized</option>
+                            <option value="terminated">Terminated</option>
                         </select>
                     </div>
                 </div>
 
-                {/* Results Spreadsheet View */}
-                <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                    {filteredResults.length === 0 ? (
-                        <div className="py-32 text-center group">
-                            <div className="w-20 h-20 bg-slate-950/50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/5 shadow-inner">
-                                <FileText size={40} className="text-slate-700 group-hover:text-indigo-500/50 transition-colors" />
-                            </div>
-                            <h3 className="text-xl font-black text-white italic uppercase tracking-tighter mb-2">No Records Detected</h3>
-                            <p className="text-slate-600 max-w-xs mx-auto text-sm font-medium italic">
-                                {results.length === 0
-                                    ? 'Awaiting first student submission for this assessment sequence.'
-                                    : 'Your query parameters yielded no matching results in this dataset.'}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-white/2 border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">
-                                    <tr>
-                                        <th className="px-8 py-6">Identity</th>
-                                        <th className="px-8 py-6">Reference</th>
-                                        <th className="px-8 py-6">Class Node</th>
-                                        <th className="px-8 py-6 text-center">Efficiency Score</th>
-                                        <th className="px-8 py-6 text-center">Percentile</th>
-                                        <th className="px-8 py-6 text-center">Anomaly Count</th>
-                                        <th className="px-8 py-6 text-center">Vitals</th>
-                                        <th className="px-8 py-6 text-right">Timestamp</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {filteredResults.map((result) => (
-                                        <tr key={result._id} className="hover:bg-white/2 transition-all group">
-                                            <td className="px-8 py-6 whitespace-nowrap">
+                {/* Records Table */}
+                <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full min-w-[1000px] text-left border-collapse">
+                            <thead>
+                                <tr className="bg-[#1a120b] border-b border-[#c5a059]/10">
+                                    <th className="px-8 py-6 text-[9px] font-black text-[#c5a059] uppercase tracking-[0.2em] italic">Candidate Identity</th>
+                                    <th className="px-8 py-6 text-[9px] font-black text-[#c5a059] uppercase tracking-[0.2em] italic">Reg Unit</th>
+                                    <th className="px-8 py-6 text-[9px] font-black text-[#c5a059] uppercase tracking-[0.2em] italic text-center">Score</th>
+                                    <th className="px-8 py-6 text-[9px] font-black text-[#c5a059] uppercase tracking-[0.2em] italic text-center">Efficiency</th>
+                                    <th className="px-8 py-6 text-[9px] font-black text-[#c5a059] uppercase tracking-[0.2em] italic text-center">Anomalies</th>
+                                    <th className="px-8 py-6 text-[9px] font-black text-[#c5a059] uppercase tracking-[0.2em] italic text-right">Log Date</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {filteredResults.map((result, idx) => {
+                                    const studentName = result.user?.fullName || result.student?.name || 'Unknown Candidate';
+                                    const regNum = result.user?.info?.registrationNumber || result.student?.registrationNumber || 'N/A';
+                                    
+                                    return (
+                                        <tr key={idx} className="group hover:bg-slate-50 transition-colors">
+                                            <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl flex items-center justify-center font-black text-sm italic shadow-inner">
-                                                        {result.student.name.charAt(0)}
+                                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-[#c5a059] text-xs uppercase italic group-hover:bg-[#1a120b] transition-all">
+                                                        {studentName.charAt(0)}
                                                     </div>
-                                                    <div className="font-black text-white uppercase italic text-sm tracking-tight group-hover:text-indigo-400 transition-colors">
-                                                        {result.student.name}
+                                                    <div>
+                                                        <p className="text-sm font-black text-[#1a150e] uppercase italic tracking-tight">{studentName}</p>
+                                                        <p className="text-[9px] font-black text-[#c5a059] uppercase tracking-[0.3em]">{result.status}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-6 whitespace-nowrap text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                                {result.student.registrationNumber || 'N/A'}
-                                            </td>
-                                            <td className="px-8 py-6 whitespace-nowrap text-xs font-bold text-indigo-400/80 uppercase tracking-widest italic">
-                                                {result.student.classLevel}
-                                            </td>
-                                            <td className="px-8 py-6 whitespace-nowrap text-center">
-                                                <div className="text-lg font-black text-white italic tracking-tighter">
+                                            <td className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">{regNum}</td>
+                                            <td className="px-8 py-6 text-center">
+                                                <span className="text-xl font-black text-[#1a150e] italic tracking-tighter">
                                                     {result.score?.toFixed(1) || '0'}
-                                                    <span className="text-[10px] font-bold text-slate-700 ml-1">/{selectedExam?.totalMarks || 100}</span>
-                                                </div>
+                                                </span>
                                             </td>
-                                            <td className="px-8 py-6 whitespace-nowrap text-center">
-                                                <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${(result.percentage || 0) >= 75 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                                    (result.percentage || 0) >= 50 ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' :
-                                                        'bg-rose-500/10 text-rose-500 border-rose-500/20'
-                                                    }`}>
+                                            <td className="px-8 py-6 text-center">
+                                                <div className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                                    result.percentage >= 70 ? 'bg-emerald-50 text-emerald-500' :
+                                                    result.percentage >= 45 ? 'bg-gold-50 text-[#c5a059]' : 'bg-rose-50 text-rose-500'
+                                                }`}>
                                                     {result.percentage?.toFixed(1) || '0'}%
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-6 whitespace-nowrap text-center">
-                                                <div className={`inline-flex items-center px-4 py-1.5 rounded-lg text-xs font-black ${result.violationCount === 0 ? 'text-slate-600' :
-                                                    result.violationCount < 3 ? 'text-amber-500 bg-amber-500/10' :
-                                                        'text-rose-500 bg-rose-500/10 animate-pulse'
-                                                    }`}>
-                                                    {result.violationCount || 0}
-                                                </div>
+                                            <td className="px-8 py-6 text-center">
+                                                <span className={`text-[10px] font-black ${result.violations?.length > 0 ? 'text-rose-500' : 'text-slate-300'}`}>
+                                                    {result.violations?.length || 0}
+                                                </span>
                                             </td>
-                                            <td className="px-8 py-6 whitespace-nowrap text-center">
-                                                <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${result.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                                    'bg-rose-500/10 text-rose-500 border-rose-500/20'
-                                                    }`}>
-                                                    {result.status}
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 whitespace-nowrap text-right text-[10px] font-bold text-slate-600 uppercase tracking-tighter italic">
-                                                {result.submittedAt ? new Date(result.submittedAt).toLocaleDateString() : 'N/A'}
-                                                <br />
-                                                {result.submittedAt ? new Date(result.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                            <td className="px-8 py-6 text-right">
+                                                <p className="text-[10px] font-black text-[#1a150e] uppercase italic mb-0.5">
+                                                    {result.endTime ? new Date(result.endTime).toLocaleDateString() : 'Active'}
+                                                </p>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                                                    {result.endTime ? new Date(result.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Pending'}
+                                                </p>
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {filteredResults.length === 0 && (
+                        <div className="py-24 text-center">
+                            <Activity size={40} className="text-slate-200 mx-auto mb-6" />
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">No Intelligence Records Found</p>
                         </div>
                     )}
                 </div>
@@ -330,4 +309,3 @@ const TeacherResults = () => {
 };
 
 export default TeacherResults;
-

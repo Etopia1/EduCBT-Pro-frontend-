@@ -1,40 +1,34 @@
 import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useSelector } from 'react-redux';
 import TeacherLayout from '../components/TeacherLayout';
-import { Users, FileText, CheckCircle, Clock, UserCheck, AlertCircle, Plus, LogOut } from 'lucide-react';
+import { LayoutDashboard, BookOpen, UserCheck, AlertCircle, CheckCircle, ChevronRight, Plus, ArrowUpRight, TrendingUp, Users, Clock, Zap, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 
-// -- Premium Dark Components ------------------------------------------
-const COLORS = ['#10B981', '#F59E0B', '#EF4444'];
-
-const StatCard = ({ title, value, icon: Icon, gradient, glow }) => (
-    <div className={`relative overflow-hidden rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6 flex flex-col gap-3 group hover:border-white/15 transition-all duration-300`}>
-        <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 ${glow}`} />
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${gradient} shadow-lg`}>
-            <Icon size={20} className="text-white" />
-        </div>
-        <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{title}</p>
-            <h3 className="text-3xl font-black text-white">{value}</h3>
-        </div>
-        <div className="flex items-center gap-1 text-indigo-400 text-xs font-semibold">
-            <Plus size={12} />
-            <span>This term</span>
+const StatCard = ({ label, value, icon: Icon, description }) => (
+    <div className="premium-card p-5 md:p-8 group relative overflow-hidden animate-fade-in-up">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#c5a059]/5 blur-[60px] rounded-full group-hover:bg-[#c5a059]/10 transition-colors" />
+        <div className="relative z-10">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-[#1a120b] flex items-center justify-center mb-4 md:mb-6 border border-[#c5a059]/10 shadow-lg group-hover:scale-110 transition-transform duration-500">
+                <Icon size={18} className="text-[#c5a059]" />
+            </div>
+            <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] mb-1 md:mb-2">{label}</p>
+            <h3 className="text-3xl md:text-4xl font-black text-[#1a150e] tracking-tighter italic uppercase mb-1 md:mb-2 group-hover:gold-text-gradient transition-all">{value}</h3>
+            <p className="text-slate-400 text-[8px] md:text-[9px] font-bold uppercase tracking-widest leading-none">{description}</p>
         </div>
     </div>
 );
 
-const DarkTooltip = ({ active, payload, label }) => {
+const GoldTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-        <div className="bg-slate-800 border border-white/10 rounded-xl px-4 py-3 shadow-xl font-sans">
-            <p className="text-slate-400 text-xs mb-2 font-semibold">{label}</p>
+        <div className="bg-[#1a120b] border border-[#c5a059]/20 rounded-2xl px-6 py-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.3em] mb-2 italic">{label}</p>
             {payload.map((p, i) => (
-                <p key={i} style={{ color: p.color }} className="text-sm font-bold">
-                    {p.name}: {p.value}%
+                <p key={i} className="text-white text-lg font-black italic">
+                    {p.value}<span className="text-[#c5a059] text-xs ml-1">% Performance</span>
                 </p>
             ))}
         </div>
@@ -49,152 +43,122 @@ const TeacherDashboard = () => {
     const [approvingId, setApprovingId] = useState(null);
     const { token, user } = useSelector((state) => state.auth);
 
-    const [stats, setStats] = useState({
-        totalStudents: 0,
-        pendingApprovals: 0,
-        activeTests: 0,
-        avgScore: 'N/A'
-    });
-
     const performanceData = [
-        { name: 'Mon', score: 65 },
-        { name: 'Tue', score: 72 },
-        { name: 'Wed', score: 68 },
-        { name: 'Thu', score: 85 },
-        { name: 'Fri', score: 78 },
+        { name: 'MON', score: 65 },
+        { name: 'TUE', score: 82 },
+        { name: 'WED', score: 78 },
+        { name: 'THU', score: 90 },
+        { name: 'FRI', score: 85 },
     ];
 
     useEffect(() => {
-        if (token) fetchDashboardData();
+        if (token) {
+            fetchPendingStudents();
+            fetchRecentTests();
+        }
     }, [token]);
 
-    const [teacherProfile, setTeacherProfile] = useState(null);
-
-    const fetchDashboardData = async () => {
+    const fetchPendingStudents = async () => {
         try {
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            setIsLoading(true);
-            const [statsRes, pendingRes, examsRes, profileRes] = await Promise.all([
-                axios.get('https://educbt-pro-backend.onrender.com/school/teacher/stats', config),
-                axios.get('https://educbt-pro-backend.onrender.com/school/teacher/pending-students', config),
-                axios.get('https://educbt-pro-backend.onrender.com/exam/teacher/all', config),
-                axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', config)
-            ]);
-
-            setStats({
-                ...statsRes.data,
-                activeTests: statsRes.data.activeExams
+            const res = await axios.get('http://localhost:2000/school/teacher/pending-students', {
+                headers: { Authorization: `Bearer ${token}` }
             });
-            setPendingStudents(pendingRes.data);
-            setRecentTests(examsRes.data.slice(0, 3));
-            setTeacherProfile(profileRes.data);
+            setPendingStudents(res.data);
         } catch (error) {
-            console.error('Error loading dashboard:', error);
+            console.error("Fetch students error:", error);
+        }
+    };
+
+    const fetchRecentTests = async () => {
+        try {
+            const res = await axios.get('http://localhost:2000/exam/teacher/all', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setRecentTests(res.data);
+        } catch (error) {
+            console.error("Fetch tests error:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleApproveStudent = async (studentId) => {
+    const handleApprove = async (studentId) => {
         setApprovingId(studentId);
         try {
-            await axios.post('https://educbt-pro-backend.onrender.com/school/teacher/approve-student',
-                { studentId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            toast.success('Student approved!');
+            await axios.post(`http://localhost:2000/school/teacher/approve-student/${studentId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success("Identity Verified Successful");
             setPendingStudents(prev => prev.filter(s => s._id !== studentId));
-            setStats(prev => ({
-                ...prev,
-                pendingApprovals: Math.max(0, prev.pendingApprovals - 1)
-            }));
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to approve');
+            toast.error("Process Failed");
         } finally {
             setApprovingId(null);
         }
     };
 
-    const statCards = [
-        { title: 'Total Students', value: stats.totalStudents, icon: Users, gradient: 'from-indigo-500 to-purple-600', glow: 'bg-indigo-500' },
-        { title: 'Pending Approvals', value: stats.pendingApprovals, icon: Clock, gradient: 'from-amber-500 to-orange-600', glow: 'bg-amber-500' },
-        { title: 'Active Tests', value: stats.activeTests, icon: FileText, gradient: 'from-emerald-500 to-teal-600', glow: 'bg-emerald-500' },
-        { title: 'Avg. Score', value: stats.avgScore, icon: CheckCircle, gradient: 'from-blue-500 to-cyan-600', glow: 'bg-blue-500' },
-    ];
-
     return (
         <TeacherLayout>
-            <div className="space-y-8 pb-10">
-                {/* -- Welcome Banner ----------------------------------- */}
-                <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent p-6 md:p-8">
-                    <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 bg-indigo-500 -translate-y-1/2 translate-x-1/2" />
-                    <div className="absolute inset-0 opacity-5"
-                        style={{
-                            backgroundImage: 'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)',
-                            backgroundSize: '22px 22px'
-                        }}
-                    />
-                    <div className="relative z-10">
-                        <div className="flex flex-wrap items-center gap-3 mb-4">
-                            <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1">
-                                <Plus size={12} className="text-indigo-400" />
-                                <span className="text-indigo-300 text-xs font-semibold">Teacher Dashboard</span>
-                            </div>
-                            {teacherProfile?.subscription?.canMonitor && (
-                                <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1 animate-pulse">
-                                    <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest leading-none">? Premium Pro</span>
-                                </div>
-                            )}
+            <div className="max-w-7xl mx-auto space-y-12 pb-20 font-outfit">
+                {/* Section Header */}
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 py-2 md:py-4">
+                    <div className="space-y-3 animate-fade-in-up">
+                        <div className="inline-flex items-center gap-3 bg-white border border-slate-100 rounded-full px-4 py-2 shadow-sm">
+                            <Activity size={14} className="text-[#c5a059]" />
+                            <span className="text-[#a18146] text-[8px] md:text-[10px] font-black uppercase tracking-[0.25em]">Session Link: High Stability</span>
                         </div>
-                        <h1 className="text-2xl md:text-3xl font-black text-white mb-1">
-                            Welcome back, <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">{user?.fullName || 'Teacher'}</span> ??
+                        <h1 className="text-3xl md:text-5xl font-black text-[#1a150e] leading-none tracking-tighter uppercase italic">
+                            Faculty <span className="gold-text-gradient">Hub</span>
                         </h1>
-                        <p className="text-slate-400 text-sm italic">Manage your classes and assessments with precision.</p>
+                        <p className="text-slate-500 text-xs md:text-sm font-medium leading-relaxed">System Operator: <span className="text-[#1a150e] font-black">{user?.fullName || 'Educator'}</span>. Managing digital infrastructure.</p>
                     </div>
                 </div>
 
-                {/* KPI Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {statCards.map((card) => (
-                        <StatCard key={card.title} {...card} />
-                    ))}
+                {/* Dashboard Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    <StatCard label="Assessment Vault" value={recentTests.length} icon={BookOpen} description="Live Script Distribution" />
+                    <StatCard label="Success Index" value="94.2%" icon={TrendingUp} description="Institutional Growth" />
+                    <StatCard label="Registry Pend" value={pendingStudents.length} icon={Clock} description="Awaiting Clearance" />
+                    <StatCard label="Operational Rank" value="#42" icon={Activity} description="Top 1% Performers" />
                 </div>
 
-                {/* Approvals Section */}
+                {/* Clearance Notifications */}
                 {pendingStudents.length > 0 && (
-                    <div className="rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6 overflow-hidden relative">
-                         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 opacity-5 blur-3xl"></div>
-                        <div className="flex items-center gap-3 mb-6 relative z-10">
-                             <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                                <UserCheck className="text-amber-400" size={20} />
-                             </div>
-                             <div>
-                                <h3 className="text-base font-bold text-white">Pending Approvals</h3>
-                                <p className="text-slate-400 text-xs">Students awaiting your verification</p>
-                             </div>
+                    <div className="bg-[#1a120b] border border-[#c5a059]/20 rounded-2xl md:rounded-[3rem] p-6 md:p-12 shadow-2xl animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 mb-8 md:mb-12">
+                            <div className="flex items-center gap-4 md:gap-5">
+                                <div className="w-12 md:w-14 h-12 md:h-14 rounded-xl md:rounded-2xl bg-[#c5a059]/10 border border-[#c5a059]/20 flex items-center justify-center text-[#c5a059] shadow-inner">
+                                    <Clock size={24} md:size={28} />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-lg md:text-xl font-black text-white italic tracking-tighter uppercase">Registry Verification Queue</h3>
+                                    <p className="text-slate-500 text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em] flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                        Clearance Authorization Required
+                                    </p>
+                                </div>
+                            </div>
+                            <button className="text-[9px] md:text-[10px] font-black text-[#c5a059] uppercase tracking-[0.25em] bg-[#c5a059]/5 px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl border border-[#c5a059]/10 hover:bg-[#c5a059]/10 transition-all">Clear All Pending</button>
                         </div>
-
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                             {pendingStudents.map((student) => (
-                                <div key={student._id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-white font-bold text-lg border border-white/10 group-hover:border-amber-500/30 transition-colors">
-                                            {student.fullName.charAt(0).toUpperCase()}
+                                <div key={student._id} className="bg-white/5 border border-white/5 p-5 md:p-6 rounded-2xl md:rounded-3xl flex items-center justify-between group hover:bg-white/10 hover:border-[#c5a059]/30 transition-all">
+                                    <div className="flex items-center gap-3 md:gap-4">
+                                        <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-slate-900 flex items-center justify-center text-[#c5a059] font-black text-xs md:text-sm uppercase italic border border-white/5 group-hover:rotate-12 transition-all">
+                                            {student.fullName.charAt(0)}
                                         </div>
-                                        <div>
-                                            <h4 className="text-sm font-bold text-slate-200">{student.fullName}</h4>
-                                            <p className="text-xs text-slate-500 mt-0.5">
-                                                {student.info?.registrationNumber || 'No ID'} • <span className="text-amber-400/80">{student.info?.classLevel}</span>
-                                            </p>
+                                        <div className="space-y-0.5 md:space-y-1">
+                                            <p className="text-xs md:text-sm font-black text-white italic tracking-tight">{student.fullName}</p>
+                                            <p className="text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest">{student.classLevel}</p>
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => handleApproveStudent(student._id)}
+                                        onClick={() => handleApprove(student._id)}
                                         disabled={approvingId === student._id}
-                                        className="h-9 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                        className="h-9 md:h-10 px-4 md:px-5 bg-[#c5a059] hover:bg-[#e2c08d] text-[#1a120b] text-[9px] md:text-[10px] font-black rounded-lg md:rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2 uppercase tracking-widest"
                                     >
-                                        {approvingId === student._id ? <span className="animate-spin text-lg">?</span> : <CheckCircle size={14} />}
-                                        {approvingId === student._id ? 'Working...' : 'Approve'}
+                                        {approvingId === student._id ? '...' : <CheckCircle size={12} md:size={14} />}
+                                        {approvingId === student._id ? '' : 'Verify'}
                                     </button>
                                 </div>
                             ))}
@@ -202,32 +166,31 @@ const TeacherDashboard = () => {
                     </div>
                 )}
 
-                {/* Charts and Lists */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
-
-                    {/* Performance Chart */}
-                    <div className="rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6">
-                        <div className="flex justify-between items-center mb-6">
+                {/* Primary Intelligence Grid */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 md:gap-10">
+                    {/* Performance Metrics */}
+                    <div className="premium-card p-6 md:p-10 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+                        <div className="flex justify-between items-center mb-8 md:mb-12">
                              <div>
-                                <h3 className="text-base font-bold text-white">Class Performance</h3>
-                                <p className="text-slate-400 text-xs">Average scores for the week</p>
+                                <h3 className="text-lg md:text-xl font-black text-[#1a150e] tracking-tighter uppercase italic">Visual Performance</h3>
+                                <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-1">Institutional score trajectory</p>
                              </div>
-                             <div className="p-2 rounded-lg bg-indigo-500/10">
-                                <Plus size={16} className="text-indigo-400" />
+                             <div className="w-10 md:w-12 h-10 md:h-12 rounded-xl md:rounded-2xl bg-slate-50 flex items-center justify-center text-[#c5a059] border border-slate-100">
+                                <TrendingUp size={18} />
                              </div>
                         </div>
-                        <div className="h-64 w-full min-w-0">
+                        <div className="h-64 md:h-80 w-full overflow-hidden">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={performanceData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
-                                    <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                                    <Bar dataKey="score" fill="url(#colorScore)" radius={[6, 6, 0, 0]} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 900 }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 900 }} />
+                                    <Tooltip content={<GoldTooltip />} cursor={{ fill: '#f8fafc', radius: 12 }} />
+                                    <Bar dataKey="score" fill="url(#colorGold)" radius={[6, 6, 0, 0]} />
                                     <defs>
-                                        <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                                        <linearGradient id="colorGold" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#c5a059" stopOpacity={1}/>
+                                            <stop offset="100%" stopColor="#c5a059" stopOpacity={0.2}/>
                                         </linearGradient>
                                     </defs>
                                 </BarChart>
@@ -235,34 +198,42 @@ const TeacherDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Recent Tests */}
-                    <div className="rounded-2xl border border-white/8 bg-slate-800/40 backdrop-blur-sm p-6 overflow-hidden">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-base font-bold text-white">My Tests</h3>
-                            <button onClick={() => navigate('/teacher/tests')} className="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors">View All</button>
+                    {/* Assessment Script Vault */}
+                    <div className="premium-card p-6 md:p-10 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12">
+                            <div>
+                                <h3 className="text-lg md:text-xl font-black text-[#1a150e] tracking-tighter uppercase italic">Script Repository</h3>
+                                <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-1">Recently engineered assessments</p>
+                            </div>
+                            <button onClick={() => navigate('/teacher/tests')} className="text-[9px] md:text-[10px] font-black text-[#c5a059] uppercase tracking-[0.2em] bg-[#c5a059]/5 px-4 md:px-5 py-2 rounded-lg border border-[#c5a059]/10 hover:bg-[#c5a059]/10 transition-all w-fit">View All</button>
                         </div>
 
                         <div className="space-y-4">
                             {recentTests.length === 0 ? (
-                                <div className="text-center py-10 text-slate-500 text-sm italic">No tests created yet</div>
+                                <div className="flex flex-col items-center justify-center py-16 md:py-20 bg-slate-50 border border-dashed border-slate-200 rounded-2xl md:rounded-[2rem]">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 bg-white rounded-full flex items-center justify-center mb-4 md:mb-6 shadow-sm">
+                                        <BookOpen size={20} className="text-slate-300" />
+                                    </div>
+                                    <p className="text-slate-400 text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em]">No scripts distributed.</p>
+                                </div>
                             ) : (
                                 recentTests.map(test => (
-                                    <div key={test._id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all cursor-pointer" onClick={() => navigate('/teacher/tests')}>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-indigo-500/10 text-indigo-400 rounded-xl flex items-center justify-center font-bold border border-indigo-500/20">
+                                    <div key={test._id} className="flex items-center justify-between p-4 md:p-6 bg-slate-50/50 hover:bg-white border border-slate-100/50 hover:border-[#c5a059]/30 rounded-2xl md:rounded-[2rem] transition-all group cursor-pointer" onClick={() => navigate('/teacher/tests')}>
+                                        <div className="flex items-center gap-4 md:gap-6">
+                                            <div className="w-10 md:w-12 h-10 md:h-12 bg-[#1a120b] text-[#c5a059] rounded-xl md:rounded-2xl flex items-center justify-center font-black text-[10px] md:text-xs border border-[#c5a059]/10 shadow-lg group-hover:rotate-12 transition-all italic shrink-0">
                                                 {test.subject.charAt(0)}
                                             </div>
-                                            <div>
-                                                <h4 className="text-sm font-bold text-slate-200 truncate max-w-[150px]">{test.title}</h4>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{test.subject}</span>
-                                                    <span className="w-1 h-1 rounded-full bg-slate-700" />
-                                                    <span className="text-[10px] text-indigo-400 font-black">{test.questions?.length} Qs</span>
+                                            <div className="space-y-1 min-w-0">
+                                                <h4 className="text-sm md:text-[15px] font-black text-[#1a150e] leading-none uppercase italic group-hover:text-[#c5a059] transition-colors truncate">{test.title}</h4>
+                                                <div className="flex items-center gap-2 md:gap-4">
+                                                    <span className="text-[8px] md:text-[9px] text-[#c5a059] font-black uppercase tracking-widest">{test.subject}</span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                                    <span className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase tracking-widest">{test.questions?.length} Items</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${test.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-700/50 text-slate-400 border-white/5'}`}>
-                                            {test.status}
+                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-[#c5a059] group-hover:border-[#c5a059]/20 transition-all shadow-sm shrink-0">
+                                            <ArrowUpRight size={16} />
                                         </div>
                                     </div>
                                 ))
@@ -271,23 +242,31 @@ const TeacherDashboard = () => {
                     </div>
                 </div>
 
-                {/* Quick Actions Footer */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-emerald-600/10 border border-emerald-500/20 p-6 rounded-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
-                        <h4 className="text-lg font-black text-emerald-400 mb-2">Staff Attendance</h4>
-                        <p className="text-emerald-100/50 text-xs mb-6">Log your daily check-in and check-out to record your hours.</p>
-                        <div className="flex gap-3">
-                            <button className="flex-1 h-11 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95">Check In</button>
-                            <button className="flex-1 h-11 bg-white/5 hover:bg-white/10 text-emerald-400 text-sm font-bold rounded-2xl border border-white/5 transition-all active:scale-95">Check Out</button>
+                {/* Operations Footer */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
+                    <div className="bg-[#1a120b] p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] relative overflow-hidden group border border-[#c5a059]/20 shadow-2xl animate-fade-in-up" style={{ animationDelay: '0.7s' }}>
+                        <div className="absolute top-[-20%] right-[-10%] w-[15rem] md:w-[25rem] h-[15rem] md:h-[25rem] bg-[#c5a059] blur-[100px] opacity-[0.05] rounded-full group-hover:opacity-[0.1] transition-all duration-700"></div>
+                        <div className="relative z-10 flex flex-col justify-between h-full">
+                            <div className="space-y-3 md:space-y-2 mb-8 md:mb-10">
+                                <h4 className="text-2xl md:text-3xl font-black text-[#c5a059] uppercase italic tracking-tighter">Presence Control</h4>
+                                <p className="text-slate-500 text-xs md:text-sm font-medium leading-relaxed max-w-xs">Initialize institutional duty clock and log faculty presence cycles.</p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <button className="flex-1 h-12 md:h-14 bg-[#c5a059] hover:bg-[#e2c08d] text-[#1a120b] text-[9px] md:text-[10px] font-black rounded-xl md:rounded-[1.25rem] transition-all shadow-xl shadow-[#c5a059]/20 active:scale-95 uppercase tracking-[0.2em]">Initialize Duty</button>
+                                <button className="flex-1 h-12 md:h-14 bg-white/5 hover:bg-white/10 text-white text-[9px] md:text-[10px] font-black rounded-xl md:rounded-[1.25rem] border border-white/10 transition-all active:scale-95 uppercase tracking-[0.2em]">Cycle History</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
-                        <h4 className="text-lg font-black text-indigo-400 mb-2">Build New Test</h4>
-                        <p className="text-indigo-100/50 text-xs mb-6">Launch the high-performance test engine to create assessments.</p>
-                        <button onClick={() => navigate('/teacher/tests/create')} className="w-full h-11 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-bold rounded-2xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95">Launch Engine</button>
+                    <div className="premium-card p-8 md:p-12 relative overflow-hidden group animate-fade-in-up shadow-lg" style={{ animationDelay: '0.8s' }}>
+                        <div className="absolute top-[-20%] right-[-10%] w-[15rem] md:w-[25rem] h-[15rem] md:h-[25rem] bg-[#c5a059]/5 blur-[80px] rounded-full group-hover:bg-[#c5a059]/10 transition-all duration-700"></div>
+                        <div className="relative z-10 flex flex-col justify-between h-full">
+                            <div className="space-y-3 md:space-y-2 mb-8 md:mb-10">
+                                <h4 className="text-2xl md:text-3xl font-black text-[#1a150e] uppercase italic tracking-tighter">Script Engineering</h4>
+                                <p className="text-slate-500 text-xs md:text-sm font-medium leading-relaxed max-w-xs">Protocol for deploying high-integrity assessment scripts to students.</p>
+                            </div>
+                            <button onClick={() => navigate('/teacher/tests/create')} className="btn-primary w-full h-12 md:h-14 rounded-xl md:rounded-[1.25rem] shadow-xl shadow-black/5 !px-4 md:!px-10">Launch Session Engine</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -296,4 +275,3 @@ const TeacherDashboard = () => {
 };
 
 export default TeacherDashboard;
-
