@@ -16,7 +16,7 @@ const AdminTeachers = () => {
 
     const fetchTeachers = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/teachers', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teachers', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTeachers(res.data);
@@ -29,7 +29,7 @@ const AdminTeachers = () => {
 
     const handleApprove = async (id) => {
         try {
-            await axios.post('http://localhost:2000/school/approve',
+            await axios.post('https://educbt-pro-backend.onrender.com/school/approve',
                 { userId: id, action: 'approve' },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

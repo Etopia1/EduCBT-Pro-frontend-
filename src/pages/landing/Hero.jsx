@@ -88,7 +88,7 @@ export default function Hero() {
                 <div className="flex-1 relative animate-fade-in-up w-full lg:w-auto" style={{ animationDelay: '0.5s' }}>
                     <div className="relative z-10 rounded-[3rem] overflow-hidden border-[12px] border-[#1a120b] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white group">
                         <img 
-                            src="file:///C:/Users/HP/.gemini/antigravity/brain/37b75b1c-e46a-43ee-b65f-c06c5191c073/cbt_dashboard_mockup_1772086561443.png" 
+                            src="/cbt_dashboard_mockup.png" 
                             alt="CBT Dashboard Mockup" 
                             className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
                         />

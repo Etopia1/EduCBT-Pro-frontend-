@@ -105,7 +105,7 @@ const Subscription = () => {
 
     const verifySession = async (sessionId) => {
         try {
-            await axios.get(`http://localhost:2000/subscription/verify/${sessionId}`, {
+            await axios.get(`https://educbt-pro-backend.onrender.com/subscription/verify/${sessionId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } catch { /* silent — webhook may have already handled it */ }
@@ -114,7 +114,7 @@ const Subscription = () => {
     const fetchSubscription = async () => {
         try {
             if (!user?.schoolId) return;
-            const res = await axios.get(`http://localhost:2000/subscription/${user.schoolId}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/subscription/${user.schoolId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Controller returns { success, subscription, isActive }
@@ -133,7 +133,7 @@ const Subscription = () => {
                 toast.error('School information not found. Please contact support.');
                 return;
             }
-            const res = await axios.post('http://localhost:2000/subscription/checkout', {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/subscription/checkout', {
                 schoolId: user.schoolId,
                 plan: planId,
                 interval

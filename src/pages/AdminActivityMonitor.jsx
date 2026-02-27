@@ -16,7 +16,7 @@ import {
 import toast from 'react-hot-toast';
 import { useSocket } from '../context/SocketContext';
 
-const API = 'http://localhost:2000';
+const API = 'https://educbt-pro-backend.onrender.com';
 
 const ACTION_COLORS = {
     USER_LOGIN: '#10b981', USER_LOGOUT: '#6b7280',
@@ -76,6 +76,9 @@ const AdminActivityMonitor = () => {
     const [userDetail, setUserDetail] = useState(null);
     const [liveActivity, setLiveActivity] = useState([]);
     const [livePing, setLivePing] = useState(false);
+    const [selectedGroup, setSelectedGroup] = useState(null);
+    const [groupMessages, setGroupMessages] = useState([]);
+    const [chatPage, setChatPage] = useState(1);
 
     // Filters
     const [filterAction, setFilterAction] = useState('');
@@ -184,6 +187,16 @@ const AdminActivityMonitor = () => {
             const res = await axios.get(`${API}/admin/groups`, { headers });
             setGroups(res.data);
         } catch {}
+        finally { setLoading(false); }
+    };
+
+    const fetchGroupMessages = async (group) => {
+        setSelectedGroup(group);
+        setLoading(true);
+        try {
+            const res = await axios.get(`${API}/admin/messages?groupId=${group._id}`, { headers });
+            setGroupMessages(res.data);
+        } catch { toast.error('Failed to load messages'); }
         finally { setLoading(false); }
     };
 
@@ -515,14 +528,16 @@ const AdminActivityMonitor = () => {
 
                 {/* ── CHAT MONITOR TAB ── */}
                 {tab === 'chat' && (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {loading ? (
-                                <div className="col-span-3 flex justify-center py-16">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        <div className={`lg:col-span-${selectedGroup ? '2' : '5'} grid grid-cols-1 md:grid-cols-2 gap-4 h-fit`}>
+                            {loading && !selectedGroup ? (
+                                <div className="col-span-full flex justify-center py-16">
                                     <div className="w-8 h-8 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin" />
                                 </div>
                             ) : groups.map(g => (
-                                <div key={g._id} className="bg-white border border-[#ede3d4] rounded-3xl p-6 hover:shadow-md transition-all">
+                                <div key={g._id} 
+                                    onClick={() => fetchGroupMessages(g)}
+                                    className={`bg-white border rounded-3xl p-6 cursor-pointer hover:shadow-md transition-all ${selectedGroup?._id === g._id ? 'border-[#c5a059] bg-[#fdfaf5]' : 'border-[#ede3d4]'}`}>
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg ${
                                             g.type === 'general' ? 'bg-emerald-50 border border-emerald-100' :
@@ -542,21 +557,52 @@ const AdminActivityMonitor = () => {
                                             <p className="text-xs text-[#6b5a4a] font-medium mt-0.5 truncate">{g.lastMessage}</p>
                                         </div>
                                     )}
-                                    <div className="flex flex-wrap gap-2 mt-4">
-                                        {(g.members || []).slice(0, 4).map(m => (
-                                            <div key={m._id} className="w-7 h-7 rounded-full bg-[#1A120B] text-[#D4AF37] flex items-center justify-center text-[9px] font-black border border-[#D4AF37]/20" title={m.fullName}>
-                                                {m.fullName?.charAt(0)}
-                                            </div>
-                                        ))}
-                                        {(g.members?.length || 0) > 4 && (
-                                            <div className="w-7 h-7 rounded-full bg-[#f0e8da] text-[#8a7564] flex items-center justify-center text-[9px] font-black">
-                                                +{g.members.length - 4}
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
                             ))}
                         </div>
+
+                        {selectedGroup && (
+                            <div className="lg:col-span-3 space-y-4">
+                                <div className="bg-white border border-[#ede3d4] rounded-3xl overflow-hidden shadow-sm flex flex-col h-[600px]">
+                                    <div className="bg-[#1A120B] px-6 py-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-[#c5a059]/10 border border-[#c5a059]/20 flex items-center justify-center text-[#c5a059]">
+                                                <MessageCircle size={20} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-white font-black text-sm uppercase italic">{selectedGroup.name.replace('DM:','').trim()}</h3>
+                                                <p className="text-[#c5a059] text-[9px] font-bold uppercase tracking-widest">{selectedGroup.type} Registry Monitor</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setSelectedGroup(null)} className="text-white/40 hover:text-white transition-colors">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#fdf9f4]">
+                                        {loading ? (
+                                            <div className="flex justify-center py-12"><div className="w-8 h-8 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin" /></div>
+                                        ) : groupMessages.length === 0 ? (
+                                            <div className="text-center py-20 text-slate-400 text-sm italic font-bold">No message history detected in this node.</div>
+                                        ) : groupMessages.map((m, i) => (
+                                            <div key={i} className={`flex flex-col ${m.senderName === user.fullName ? 'items-end' : 'items-start'}`}>
+                                                <div className="flex items-center gap-2 mb-1 px-1">
+                                                    <span className="text-[9px] font-black text-[#1a120b] uppercase italic">{m.senderName}</span>
+                                                    <span className="text-[8px] text-slate-400 font-bold">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                                <div className={`px-4 py-2.5 rounded-2xl max-w-[85%] text-xs font-medium shadow-sm ${
+                                                    m.senderName === user.fullName 
+                                                    ? 'bg-[#1a120b] text-white rounded-tr-none' 
+                                                    : 'bg-white border border-slate-100 text-slate-700 rounded-tl-none'
+                                                }`}>
+                                                    {m.content}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

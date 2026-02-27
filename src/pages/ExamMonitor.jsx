@@ -159,7 +159,7 @@ const ExamMonitor = () => {
     useEffect(() => {
         fetchInitialData();
 
-        const socket = io('http://localhost:2000', { auth: { token } });
+        const socket = io('https://educbt-pro-backend.onrender.com', { auth: { token } });
         socketRef.current = socket;
 
         // Join teacher's monitor room
@@ -263,8 +263,8 @@ const ExamMonitor = () => {
     const fetchInitialData = async () => {
         try {
             const [eData, sData] = await Promise.all([
-                axios.get(`http://localhost:2000/exam/${examId}`, { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get(`http://localhost:2000/exam/${examId}/sessions`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}/sessions`, { headers: { Authorization: `Bearer ${token}` } }),
             ]);
             setExam(eData.data);
             // Normalize: flatten student.name -> studentName for convenience
@@ -295,7 +295,7 @@ const ExamMonitor = () => {
             const action = session.isLocked ? 'unlock' : 'lock';
             setProcessing(session._id);
             try {
-                await axios.post(`http://localhost:2000/exam/session/${session._id}/${action}`, {}, {
+                await axios.post(`https://educbt-pro-backend.onrender.com/exam/session/${session._id}/${action}`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success(session.isLocked
@@ -310,7 +310,7 @@ const ExamMonitor = () => {
             if (!window.confirm(`Submit ${session.studentName}'s exam now?`)) return;
             setProcessing(session._id);
             try {
-                await axios.post(`http://localhost:2000/exam/session/${session._id}/force-submit`, {}, {
+                await axios.post(`https://educbt-pro-backend.onrender.com/exam/session/${session._id}/force-submit`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success(`✅ ${session.studentName}'s exam submitted`);
@@ -323,7 +323,7 @@ const ExamMonitor = () => {
             if (!window.confirm(`Remove ${session.studentName} from exam?`)) return;
             setProcessing(session._id);
             try {
-                await axios.post(`http://localhost:2000/exam/session/${session._id}/lock`, {}, {
+                await axios.post(`https://educbt-pro-backend.onrender.com/exam/session/${session._id}/lock`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success(`${session.studentName} removed`);

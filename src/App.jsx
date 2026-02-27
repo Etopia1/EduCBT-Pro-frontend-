@@ -6,12 +6,17 @@ import SchoolRegister from './pages/SchoolRegister';
 import StudentSignup from './pages/StudentSignup';
 import TeacherSignup from './pages/TeacherSignup';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import VerifyOTP from './pages/VerifyOTP';
+import ResetPassword from './pages/ResetPassword';
 import PrivateRoute from './components/PrivateRoute';
 // Removed AuthContext import
 import AdminTeachers from './pages/AdminTeachers';
 import AdminApprovals from './pages/AdminApprovals';
 import AdminStudents from './pages/AdminStudents';
 import AdminExams from './pages/AdminExams';
+import AdminResults from './pages/AdminResults';
+import AdminAnalytics from './pages/AdminAnalytics';
 import PlaceholderPage from './pages/PlaceholderPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherAttendance from './pages/TeacherAttendance'; // Added by instruction
@@ -53,6 +58,9 @@ function App() {
         <Route path="/signup/student" element={<StudentSignup />} />
         <Route path="/signup/student/:schoolRefId" element={<StudentSignup />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Admin Routes (Super Admin) */}
         <Route
@@ -117,6 +125,32 @@ function App() {
           element={
             <PrivateRoute role="school_admin">
               <ResultTemplateManager />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/school/exams"
+          element={
+            <PrivateRoute role="school_admin">
+              <AdminExams />
+            </PrivateRoute>
+          }
+        />
+        <Route path="/school/results" element={<PrivateRoute role="school_admin"><AdminResults /></PrivateRoute>} />
+        <Route path="/school/analytics" element={<PrivateRoute role="school_admin"><AdminAnalytics /></PrivateRoute>} />
+        <Route
+          path="/school/attendance"
+          element={
+            <PrivateRoute role="school_admin">
+              <StaffAttendance isAdmin={true} />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/school/settings"
+          element={
+            <PrivateRoute role="school_admin">
+              <AdminSettings />
             </PrivateRoute>
           }
         />

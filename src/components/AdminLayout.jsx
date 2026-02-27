@@ -3,19 +3,18 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, GraduationCap, FileQuestion, ClipboardCheck,
     LogOut, Menu, X, Settings, UserCheck,
-    MessageSquare, ChevronRight, Activity
+    MessageSquare, ChevronRight, Activity, Clock, TrendingUp
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import toast from 'react-hot-toast';
 import { useSocket } from '../context/SocketContext';
-import CallModal from './CallModal';
 
 const AdminLayout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
-    const { callState, socket, endCall } = useSocket();
+    const { socket } = useSocket();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -26,6 +25,8 @@ const AdminLayout = ({ children }) => {
         { path: '/school/students', label: 'Students', icon: GraduationCap },
         { path: '/school/exams', label: 'Exams', icon: FileQuestion },
         { path: '/school/results', label: 'Results', icon: ClipboardCheck },
+        { path: '/school/analytics', label: 'Analytics', icon: TrendingUp },
+        { path: '/school/attendance', label: 'Attendance', icon: Clock },
         { path: '/school/activity', label: 'Audit Log', icon: Activity },
         { path: '/school/community', label: 'Community', icon: MessageSquare },
         { path: '/school/settings', label: 'Settings', icon: Settings },
@@ -186,14 +187,6 @@ const AdminLayout = ({ children }) => {
                 </main>
             </div>
 
-            {callState && socket && (
-                <CallModal 
-                    socket={socket} 
-                    currentUser={user} 
-                    callState={callState} 
-                    onClose={endCall} 
-                />
-            )}
         </div>
     );
 };

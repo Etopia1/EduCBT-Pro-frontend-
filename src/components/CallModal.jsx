@@ -19,6 +19,7 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
     const [videoOff, setVideoOff] = useState(callState.callType === 'voice');
     const [sharing, setSharing] = useState(false);
     const [duration, setDuration] = useState(0);
+    const [isMinimized, setIsMinimized] = useState(false);
     const [peers, setPeers] = useState({}); // socketId -> { stream, name, videoEnabled }
 
     const localVideoRef = useRef(null);
@@ -53,9 +54,24 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
         }
     }, [callType]);
 
+    const pendingCandidates = useRef({});
+
+    const addPeer = useCallback((socketId, initialData = {}) => {
+        setPeers(prev => {
+            const existing = prev[socketId] || {};
+            // Don't overwrite an existing stream with null
+            if (existing.stream && !initialData.stream) {
+                return { ...prev, [socketId]: { ...existing, ...initialData, stream: existing.stream } };
+            }
+            return { ...prev, [socketId]: { ...existing, ...initialData } };
+        });
+    }, []);
+
     const removePeer = useCallback((socketId) => {
-        peerConnections.current[socketId]?.close();
-        delete peerConnections.current[socketId];
+        if (peerConnections.current[socketId]) {
+            peerConnections.current[socketId].close();
+            delete peerConnections.current[socketId];
+        }
         setPeers(prev => {
             const updated = { ...prev };
             delete updated[socketId];
@@ -63,7 +79,9 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
         });
     }, []);
 
-    const createPeerConnection = useCallback((remoteSocketId, userName) => {
+    const createPeerConnection = useCallback((remoteSocketId) => {
+        if (peerConnections.current[remoteSocketId]) return peerConnections.current[remoteSocketId];
+
         const pc = new RTCPeerConnection(ICE_SERVERS);
         peerConnections.current[remoteSocketId] = pc;
 
@@ -74,15 +92,14 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
         }
 
         pc.onicecandidate = ({ candidate }) => {
-            if (candidate) socket.emit('rtc_ice_candidate', { targetSocketId: remoteSocketId, candidate });
+            if (candidate) {
+                socket.emit('rtc_ice_candidate', { targetSocketId: remoteSocketId, candidate });
+            }
         };
 
         pc.ontrack = (event) => {
             const [remoteStream] = event.streams;
-            setPeers(prev => ({
-                ...prev,
-                [remoteSocketId]: { ...prev[remoteSocketId], stream: remoteStream, name: userName || 'Peer' }
-            }));
+            addPeer(remoteSocketId, { stream: remoteStream });
         };
 
         pc.onconnectionstatechange = () => {
@@ -90,8 +107,16 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
             if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) removePeer(remoteSocketId);
         };
 
+        // Add any candidates that arrived before PC was ready
+        if (pendingCandidates.current[remoteSocketId]) {
+            pendingCandidates.current[remoteSocketId].forEach(cand => {
+                pc.addIceCandidate(new RTCIceCandidate(cand)).catch(e => console.error('[WebRTC] ICE Queue Error:', e));
+            });
+            delete pendingCandidates.current[remoteSocketId];
+        }
+
         return pc;
-    }, [socket, removePeer]);
+    }, [socket, removePeer, addPeer]);
 
     const joinRoom = useCallback(async () => {
         setPhase('connecting');
@@ -100,66 +125,102 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
 
         socket.emit('join_call_room', {
             roomId,
-            userId: currentUser?._id,
+            userId: currentUser?._id || currentUser?.id,
             userName: currentUser?.fullName,
             callType
         });
+    }, [socket, roomId, currentUser, callType, getLocalStream, onClose]);
 
-        socket.on('call_room_peers', async ({ peers: existingPeers }) => {
+    useEffect(() => {
+        if (!socket) return;
+
+        const handlePeers = async ({ peers: existingPeers }) => {
             for (const peerId of existingPeers) {
-                const pc = createPeerConnection(peerId, 'Joining...');
+                const pc = createPeerConnection(peerId);
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 socket.emit('rtc_offer', { targetSocketId: peerId, offer, roomId });
             }
-            if (existingPeers.length === 0) setPhase('connected');
-        });
+            // Auto-transition to connected phase if we are joining and there are peers
+            // or if there are no peers (already handled).
+            setPhase('connected');
+        };
 
-        socket.on('peer_joined_call', ({ peerId, userName }) => {
-            setPeers(prev => ({ ...prev, [peerId]: { name: userName, stream: null } }));
-        });
+        const handlePeerJoined = ({ peerId, userName }) => {
+            addPeer(peerId, { name: userName });
+        };
 
-        socket.on('rtc_offer', async ({ offer, fromSocketId }) => {
-            const pc = createPeerConnection(fromSocketId, 'Joining...');
+        const handleOffer = async ({ offer, fromSocketId }) => {
+            const pc = createPeerConnection(fromSocketId);
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             socket.emit('rtc_answer', { targetSocketId: fromSocketId, answer });
-        });
+        };
 
-        socket.on('rtc_answer', async ({ answer, fromSocketId }) => {
+        const handleAnswer = async ({ answer, fromSocketId }) => {
             const pc = peerConnections.current[fromSocketId];
             if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        });
+        };
 
-        socket.on('rtc_ice_candidate', async ({ candidate, fromSocketId }) => {
+        const handleIceCandidate = async ({ candidate, fromSocketId }) => {
             const pc = peerConnections.current[fromSocketId];
-            if (pc && candidate) pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
-        });
+            if (pc && pc.remoteDescription) {
+                pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+            } else if (candidate) {
+                if (!pendingCandidates.current[fromSocketId]) pendingCandidates.current[fromSocketId] = [];
+                pendingCandidates.current[fromSocketId].push(candidate);
+            }
+        };
 
-        socket.on('peer_left_call', ({ peerId }) => removePeer(peerId));
-    }, [socket, roomId, currentUser, callType, createPeerConnection, getLocalStream, onClose, removePeer]);
+        const handlePeerLeft = ({ peerId }) => removePeer(peerId);
 
-    useEffect(() => {
-        if (!isIncoming) joinRoom();
+        socket.on('call_room_peers', handlePeers);
+        socket.on('peer_joined_call', handlePeerJoined);
+        socket.on('rtc_offer', handleOffer);
+        socket.on('rtc_answer', handleAnswer);
+        socket.on('rtc_ice_candidate', handleIceCandidate);
+        socket.on('peer_left_call', handlePeerLeft);
+
         return () => {
+            socket.off('call_room_peers', handlePeers);
+            socket.off('peer_joined_call', handlePeerJoined);
+            socket.off('rtc_offer', handleOffer);
+            socket.off('rtc_answer', handleAnswer);
+            socket.off('rtc_ice_candidate', handleIceCandidate);
+            socket.off('peer_left_call', handlePeerLeft);
+        };
+    }, [socket, roomId, createPeerConnection, removePeer, addPeer]);
+
+    // Handle initial join logic
+    useEffect(() => {
+        if (!isIncoming && phase === 'connecting') {
+            joinRoom();
+        }
+    }, [isIncoming, joinRoom]);
+
+    // Ensure listeners are cleaned up and tracks stop on unmount
+    useEffect(() => {
+        return () => {
+            console.log('[CallModal] Unmounting - Cleaning up tracks and PCs');
             localStreamRef.current?.getTracks().forEach(t => t.stop());
             Object.values(peerConnections.current).forEach(pc => pc.close());
-            socket.off('call_room_peers');
-            socket.off('peer_joined_call');
-            socket.off('rtc_offer');
-            socket.off('rtc_answer');
-            socket.off('rtc_ice_candidate');
-            socket.off('peer_left_call');
+            
+            socket?.off('call_room_peers');
+            socket?.off('peer_joined_call');
+            socket?.off('rtc_offer');
+            socket?.off('rtc_answer');
+            socket?.off('rtc_ice_candidate');
+            socket?.off('peer_left_call');
         };
-    }, []);
+    }, [socket]);
 
     const handleAccept = () => {
         socket.emit('call_accepted', {
             callerId: callState.callerId,
             roomId,
             answererName: currentUser?.fullName,
-            answererId: currentUser?._id
+            answererId: currentUser?._id || currentUser?.id
         });
         joinRoom();
     };
@@ -178,16 +239,78 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
         }
     };
 
+    const toggleScreenShare = async () => {
+        try {
+            if (!sharing) {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const videoTrack = screenStream.getVideoTracks()[0];
+
+                Object.values(peerConnections.current).forEach(pc => {
+                    const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                    if (sender) sender.replaceTrack(videoTrack).catch(e => console.error(e));
+                });
+
+                videoTrack.onended = () => {
+                    stopScreenShare();
+                };
+                
+                if (localVideoRef.current) localVideoRef.current.srcObject = screenStream;
+                setSharing(true);
+            } else {
+                stopScreenShare();
+            }
+        } catch (err) {
+            console.error('Screen share error:', err);
+        }
+    };
+
+    const stopScreenShare = () => {
+        if (localStreamRef.current) {
+            const videoTrack = localStreamRef.current.getVideoTracks()[0];
+            Object.values(peerConnections.current).forEach(pc => {
+                const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) sender.replaceTrack(videoTrack).catch(e => console.error(e));
+            });
+            if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+            setSharing(false);
+        }
+    };
+
     const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
     return (
-        <div className="fixed inset-0 z-[100] bg-[#0a0a0a] flex flex-col font-outfit animate-fade-in overflow-hidden">
+        <div className={`fixed z-100 bg-[#0a0a0a] transition-all duration-500 font-outfit overflow-hidden
+            ${isMinimized 
+                ? 'bottom-10 right-10 w-80 h-48 rounded-3xl shadow-2xl border border-white/10' 
+                : 'inset-0 flex flex-col animate-fade-in'
+            }`}>
+            
+            {isMinimized && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black group overflow-hidden">
+                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover mirror opacity-40" />
+                    <div className="absolute top-4 right-4 flex gap-2 z-50">
+                        <button onClick={() => setIsMinimized(false)} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white">
+                            <Maximize2 size={16} />
+                        </button>
+                        <button onClick={onClose} className="p-2 bg-rose-500 rounded-lg hover:bg-rose-600 text-white">
+                            <X size={16} />
+                        </button>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-white text-xs font-black uppercase italic tracking-widest">{callState.callerName || callState.targetName}</p>
+                        <p className="text-emerald-500 text-[10px] font-bold">{fmt(duration)}</p>
+                    </div>
+                </div>
+            )}
+
+            {!isMinimized && (
+                <>
             {/* Header Info */}
             <div className="absolute top-8 left-8 z-20 flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                    <div className={`w-2.5 h-2.5 rounded-full animate-pulse shadow-lg ${callType === 'video' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
                     <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">
-                        Encypted {callType} Session
+                        Encrypted {callType === 'video' ? 'Visual' : 'Aural'} Intelligence Session
                     </span>
                 </div>
                 <h2 className="text-white text-3xl font-black italic uppercase tracking-tighter">
@@ -227,7 +350,7 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
                     }`}>
                         {/* Remote Peers */}
                         {Object.entries(peers).map(([id, peer]) => (
-                            <div key={id} className="relative rounded-[2rem] overflow-hidden bg-white/5 border border-white/10 group">
+                            <div key={id} className="relative rounded-4xl overflow-hidden bg-white/5 border border-white/10 group">
                                 {peer.stream ? (
                                     <video autoPlay playsInline ref={el => { if(el) el.srcObject = peer.stream }} className="w-full h-full object-cover" />
                                 ) : (
@@ -246,7 +369,7 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
                         ))}
 
                         {/* Local Video */}
-                        <div className={`relative rounded-[2rem] overflow-hidden bg-white/5 border border-[#D4AF37]/20 group ${Object.keys(peers).length === 0 ? 'max-w-4xl mx-auto' : ''}`}>
+                        <div className={`relative rounded-4xl overflow-hidden bg-white/5 border border-[#D4AF37]/20 group ${Object.keys(peers).length === 0 ? 'max-w-4xl mx-auto' : ''}`}>
                             <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover mirror" />
                             {(videoOff || callType === 'voice') && (
                                 <div className="absolute inset-0 bg-[#0f0f0f] flex flex-col items-center justify-center gap-6">
@@ -270,18 +393,24 @@ const CallModal = ({ socket, currentUser, callState, onClose }) => {
             </div>
 
             {/* Control Bar */}
-            {phase !== 'ringing' && (
-                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-6 px-10 py-6 bg-white/5 backdrop-blur-3xl rounded-[3rem] border border-white/10 shadow-2xl">
+            {phase !== 'ringing' && !isMinimized && (
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-6 px-10 py-6 bg-white/5 backdrop-blur-3xl rounded-4xl border border-white/10 shadow-2xl">
+                    <ControlBtn icon={isMinimized ? Maximize2 : Minimize2} active={false} onClick={() => setIsMinimized(!isMinimized)} />
                     <ControlBtn icon={muted ? MicOff : Mic} active={!muted} onClick={toggleMute} color={muted ? 'bg-rose-500' : 'bg-[#D4AF37]'} />
                     {callType === 'video' && (
-                        <ControlBtn icon={videoOff ? VideoOff : Video} active={!videoOff} onClick={toggleVideo} color={videoOff ? 'bg-rose-500' : 'bg-white/10'} />
+                        <>
+                            <ControlBtn icon={videoOff ? VideoOff : Video} active={!videoOff} onClick={toggleVideo} color={videoOff ? 'bg-rose-500' : 'bg-white/10'} />
+                            <ControlBtn icon={sharing ? ScreenShareOff : ScreenShare} active={sharing} onClick={toggleScreenShare} color={sharing ? 'bg-sky-500' : 'bg-white/10'} />
+                        </>
                     )}
-                    <button onClick={onClose} className="w-20 h-20 rounded-full bg-rose-500 flex items-center justify-center shadow-2xl shadow-rose-500/30 hover:bg-rose-600 transition-all hover:scale-110 group active:scale-95">
-                        <PhoneOff size={28} className="text-white group-hover:rotate-[135deg] transition-transform duration-500" />
+                    <button onClick={onClose} className="w-16 h-16 rounded-3xl bg-rose-500 flex items-center justify-center text-white shadow-2xl hover:bg-rose-600 transition-all hover:scale-110 active:scale-95 group">
+                        <PhoneOff size={28} className="group-hover:rotate-12 transition-transform" />
                     </button>
-                    <ControlBtn icon={sharing ? ScreenShareOff : ScreenShare} active={sharing} onClick={() => {}} disabled />
-                    <ControlBtn icon={Maximize2} active={false} onClick={() => {}} />
+                    <ControlBtn icon={Users} active={false} onClick={() => {}} />
                 </div>
+            )}
+
+                </>
             )}
 
             <style>{`

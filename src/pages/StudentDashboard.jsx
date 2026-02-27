@@ -37,7 +37,7 @@ const StudentDashboard = () => {
 
     const fetchExams = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/exam/student', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/student', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExams(res.data);
@@ -50,7 +50,7 @@ const StudentDashboard = () => {
 
     const fetchResults = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/exam/results', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/results', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setResults(res.data);

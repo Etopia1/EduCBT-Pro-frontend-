@@ -21,7 +21,7 @@ const TeacherTests = () => {
     const fetchExams = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('http://localhost:2000/exam/teacher/all', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/teacher/all', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExams(res.data);
@@ -35,7 +35,7 @@ const TeacherTests = () => {
     const handleDelete = async (id) => {
         if (!window.confirm("Permanent deletion cannot be undone. Proceed?")) return;
         try {
-            await axios.delete(`http://localhost:2000/exam/${id}`, {
+            await axios.delete(`https://educbt-pro-backend.onrender.com/exam/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Assessment expunged");
@@ -49,7 +49,7 @@ const TeacherTests = () => {
         const newStatus = currentStatus === 'active' ? 'scheduled' : 'active';
         const newIsActive = newStatus === 'active'; // sync both together
         try {
-            await axios.patch(`http://localhost:2000/exam/${id}/status`, {
+            await axios.patch(`https://educbt-pro-backend.onrender.com/exam/${id}/status`, {
                 status: newStatus,
                 isActive: newIsActive
             }, {
@@ -67,7 +67,7 @@ const TeacherTests = () => {
         const loadingToast = toast.loading('Preparing exam PDF...');
         try {
             // Fetch full exam with questions from backend
-            const res = await axios.get(`http://localhost:2000/exam/${exam._id}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${exam._id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const fullExam = res.data;

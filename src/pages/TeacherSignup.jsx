@@ -31,7 +31,7 @@ const TeacherSignup = () => {
             const id = urlSchoolId || token;
             if (id) {
                 try {
-                    const res = await axios.get(`http://localhost:2000/school/${id}`);
+                    const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/${id}`);
                     setSchoolInfo(res.data);
                 } catch (err) {
                     console.error("School context error:", err);
@@ -66,7 +66,7 @@ const TeacherSignup = () => {
         setIsLoading(true);
         const loadingToast = toast.loading('Initializing Faculty Credentials...');
         try {
-            await axios.post('http://localhost:2000/school/teacher/register', formData);
+            await axios.post('https://educbt-pro-backend.onrender.com/school/teacher/register', formData);
             toast.dismiss(loadingToast);
             toast.success('Faculty Registry Success! Awaiting Admin Clearance.');
             navigate('/login');

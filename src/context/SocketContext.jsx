@@ -2,10 +2,11 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
+import CallModal from '../components/CallModal';
 
 const SocketContext = createContext();
 
-const API = 'http://localhost:2000';
+const API = 'https://educbt-pro-backend.onrender.com';
 
 export const SocketProvider = ({ children }) => {
     const { token, user } = useSelector(state => state.auth);
@@ -28,7 +29,12 @@ export const SocketProvider = ({ children }) => {
             const s = io(API, { auth: { token } });
             setSocket(s);
 
-            s.emit('join_personal', user._id);
+            const userId = user._id || user.id;
+            if (!userId) {
+                console.error('[SOCKET] User ID is missing in auth state!', user);
+            }
+
+            s.emit('join_personal', userId);
             if (user.role === 'school_admin') {
                 s.emit('join_admin_monitor', user.schoolId);
             }
@@ -81,6 +87,12 @@ export const SocketProvider = ({ children }) => {
                 toast(alert.message, { icon: '🚨', duration: 5000 });
             });
 
+            // REAL-TIME CALL UPDATES
+            s.on('ongoing_call_update', () => {
+                // If there's a global method to fetch calls, we can trigger it here
+                // For now, it will be handled by components listening or periodic fetch
+            });
+
             return () => s.close();
         }
     }, [token, user?.schoolId, user?.role]);
@@ -94,10 +106,11 @@ export const SocketProvider = ({ children }) => {
 
     const startCall = useCallback((target, type, isGroup = false) => {
         if (!socket) return;
-        const roomId = `${user._id}_${Date.now()}`;
+        const userId = user?._id || user?.id;
+        const roomId = `${userId}_${Date.now()}`;
         setCallState({
             incoming: false,
-            targetId: isGroup ? null : target._id,
+            targetId: isGroup ? null : (target._id || target.id),
             targetName: target.fullName || target.name,
             callType: type,
             roomId,
@@ -109,19 +122,21 @@ export const SocketProvider = ({ children }) => {
         if (isGroup) {
             socket.emit('call_group', {
                 targetUserIds: target.memberIds,
-                callerId: user._id,
+                callerId: userId,
                 callerName: user.fullName,
                 callType: type,
                 roomId,
-                groupName: target.name
+                groupName: target.name,
+                schoolId: user.schoolId
             });
         } else {
             socket.emit('call_user', {
-                targetUserId: target._id,
-                callerId: user._id,
+                targetUserId: target._id || target.id,
+                callerId: userId,
                 callerName: user.fullName,
                 callType: type,
-                roomId
+                roomId,
+                schoolId: user.schoolId
             });
         }
     }, [socket, user]);
@@ -146,8 +161,22 @@ export const SocketProvider = ({ children }) => {
             adminNotifications 
         }}>
             {children}
+            {callState && (
+                <CallModal 
+                    socket={socket} 
+                    currentUser={user} 
+                    callState={callState} 
+                    onClose={endCall} 
+                />
+            )}
         </SocketContext.Provider>
     );
 };
 
-export const useSocket = () => useContext(SocketContext);
+export const useSocket = () => {
+    const context = useContext(SocketContext);
+    if (!context) {
+        throw new Error('useSocket must be used within a SocketProvider. Check if you wrapped your App with <SocketProvider>.');
+    }
+    return context;
+};

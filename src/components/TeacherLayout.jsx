@@ -6,11 +6,10 @@ import { logout } from '../redux/authSlice';
 import axios from 'axios';
 import { useAutoLogout } from '../hooks/useAutoLogout';
 import { useSocket } from '../context/SocketContext';
-import CallModal from './CallModal';
 
 const TeacherLayout = ({ children }) => {
     const { user: authUser, token } = useSelector((state) => state.auth);
-    const { callState, socket, endCall } = useSocket();
+    const { socket } = useSocket();
     const [user, setUser] = useState(authUser);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const dispatch = useDispatch();
@@ -26,7 +25,7 @@ const TeacherLayout = ({ children }) => {
 
     const fetchProfile = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/teacher/profile', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUser(res.data);
@@ -182,14 +181,6 @@ const TeacherLayout = ({ children }) => {
                 </main>
             </div>
 
-            {callState && socket && (
-                <CallModal 
-                    socket={socket} 
-                    currentUser={authUser} 
-                    callState={callState} 
-                    onClose={endCall} 
-                />
-            )}
         </div>
     );
 };

@@ -8,8 +8,9 @@ import {
 } from 'recharts';
 import {
     Users, GraduationCap, CheckCircle, Clock, AlertTriangle,
-    Zap, ArrowUpRight, ShieldCheck, Activity
+    Zap, ArrowUpRight, ShieldCheck, Activity, TrendingUp, BrainCircuit
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const COLORS = ['#c5a059', '#1A120B', '#EF4444'];
@@ -55,6 +56,7 @@ const AdminDashboard = () => {
         { name: 'FLAGGED', value: 10 },
         { name: 'BREACH', value: 5 }
     ]);
+    const [aiInsights, setAiInsights] = useState([]);
     const { token } = useSelector((state) => state.auth);
     const { user } = useSelector((state) => state.auth);
 
@@ -65,12 +67,14 @@ const AdminDashboard = () => {
     const fetchData = async () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const [statsRes, growthRes] = await Promise.all([
-                axios.get('http://localhost:2000/school/dashboard/stats', config),
-                axios.get('http://localhost:2000/school/analytics/user-growth', config)
+            const [statsRes, growthRes, aiRes] = await Promise.all([
+                axios.get('https://educbt-pro-backend.onrender.com/school/dashboard/stats', config),
+                axios.get('https://educbt-pro-backend.onrender.com/school/analytics/user-growth', config),
+                axios.get('https://educbt-pro-backend.onrender.com/school/analytics/ai-insights', config)
             ]);
             setStats(statsRes.data);
             setUserGrowth(growthRes.data);
+            setAiInsights(aiRes.data);
         } catch (error) {
             console.error('Dashboard error:', error);
         }
@@ -97,6 +101,16 @@ const AdminDashboard = () => {
                             Operational <span className="gold-text-gradient">Intelligence</span>
                         </h1>
                         <p className="text-slate-500 text-xs md:text-sm font-medium">Administrator: <span className="text-[#1a150e] font-black">{user?.schoolName || 'KICC Portal'}</span> Branch Control.</p>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <Link 
+                            to="/school/analytics" 
+                            className="bg-[#1a120b] text-[#c5a059] px-6 py-3 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] hover:shadow-xl hover:shadow-black/10 transition-all border border-[#c5a059]/20"
+                        >
+                            <BrainCircuit size={16} />
+                            Deep Analytics
+                        </Link>
                     </div>
                 </div>
 
@@ -221,7 +235,7 @@ const AdminDashboard = () => {
                                     onChange={async (e) => {
                                         try {
                                             const newDate = e.target.value;
-                                            await axios.post('http://localhost:2000/school/term/update',
+                                            await axios.post('https://educbt-pro-backend.onrender.com/school/term/update',
                                                 { termEndDate: newDate },
                                                 { headers: { Authorization: `Bearer ${token}` } }
                                             );
@@ -238,6 +252,37 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* AI Insights Board */}
+                <div className="premium-card p-10 animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
+                    <div className="flex items-center justify-between mb-10">
+                        <div>
+                            <h3 className="text-lg font-black text-[#1a150e] uppercase italic tracking-tighter">AI Operational Advisor</h3>
+                            <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mt-1">Real-time heuristic analysis results</p>
+                        </div>
+                        <Link to="/school/analytics" className="text-[#c5a059] text-[9px] font-black uppercase tracking-widest hover:underline flex items-center gap-2">
+                             Full Heuristics <ArrowUpRight size={12} />
+                        </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {aiInsights.length > 0 ? aiInsights.map((insight, idx) => (
+                            <div key={idx} className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl group hover:border-[#c5a059]/30 transition-all">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className={`w-2 h-2 rounded-full ${insight.priority === 'high' ? 'bg-rose-500 animate-pulse' : 'bg-[#c5a059]'}`} />
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{insight.type}</span>
+                                </div>
+                                <h4 className="text-sm font-black text-[#1a150e] uppercase italic mb-2 leading-tight group-hover:text-[#c5a059] transition-colors">{insight.title}</h4>
+                                <p className="text-slate-500 text-[10px] font-medium leading-relaxed italic">{insight.message}</p>
+                            </div>
+                        )) : (
+                            <div className="col-span-full py-10 flex flex-col items-center justify-center text-center space-y-3">
+                                <Activity className="text-slate-200" size={32} />
+                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">System idle. No operational anomalies detected in current node.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

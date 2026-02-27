@@ -50,7 +50,7 @@ const ExamPage = () => {
         fetchExamAndStart();
         setupSecurityListeners();
         // Connect socket for proctoring
-        socketRef.current = io('http://localhost:2000', { auth: { token } });
+        socketRef.current = io('https://educbt-pro-backend.onrender.com', { auth: { token } });
         return () => {
             clearInterval(timerRef.current);
             clearInterval(faceTimerRef.current);
@@ -63,13 +63,13 @@ const ExamPage = () => {
     // Load exam info AND start a session to get sessionId
     const fetchExamAndStart = async () => {
         try {
-            const examRes = await axios.get(`http://localhost:2000/exam/${examId}`, {
+            const examRes = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExam(examRes.data);
             setTimeLeft(examRes.data.durationMinutes * 60);
 
-            const sessionRes = await axios.post('http://localhost:2000/exam/start', {
+            const sessionRes = await axios.post('https://educbt-pro-backend.onrender.com/exam/start', {
                 examId
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -350,7 +350,7 @@ const ExamPage = () => {
                 }
             });
 
-            await axios.post('http://localhost:2000/exam/submit', {
+            await axios.post('https://educbt-pro-backend.onrender.com/exam/submit', {
                 sessionId,
                 answers: answersArray,
                 tabSwitches

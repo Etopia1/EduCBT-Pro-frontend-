@@ -28,7 +28,7 @@ const StudentSignup = () => {
             const id = urlSchoolId || schoolRefId;
             if (id) {
                 try {
-                    const res = await axios.get(`http://localhost:2000/school/${id}`);
+                    const res = await axios.get(`https://educbt-pro-backend.onrender.com/school/${id}`);
                     setSchoolInfo(res.data);
                 } catch (err) {
                     console.error("School context fetch error:", err);
@@ -47,7 +47,7 @@ const StudentSignup = () => {
         setIsLoading(true);
         const loadingToast = toast.loading('Initializing Candidate Identity...');
         try {
-            await axios.post('http://localhost:2000/auth/register', { ...formData, role: 'student' });
+            await axios.post('https://educbt-pro-backend.onrender.com/auth/register', { ...formData, role: 'student' });
             toast.dismiss(loadingToast);
             toast.success('Identity Created Successfully!');
             navigate('/login');

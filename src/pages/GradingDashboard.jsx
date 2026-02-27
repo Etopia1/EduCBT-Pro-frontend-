@@ -29,7 +29,7 @@ const GradingDashboard = () => {
     const fetchGradingList = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('http://localhost:2000/exam/grading/list', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/grading/list', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setGradingList(res.data);
@@ -80,7 +80,7 @@ const GradingDashboard = () => {
                     }
                 });
 
-                await axios.post('http://localhost:2000/exam/grading/submit', {
+                await axios.post('https://educbt-pro-backend.onrender.com/exam/grading/submit', {
                     sessionId: session._id,
                     grades: sessionGrades
                 }, {

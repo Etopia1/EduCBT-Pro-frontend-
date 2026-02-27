@@ -16,7 +16,7 @@ const AdminStudents = () => {
 
     const fetchStudents = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/students', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/students', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStudents(res.data);

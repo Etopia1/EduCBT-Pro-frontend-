@@ -5,6 +5,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    include: ['emoji-picker-react']
-  }
+    include: ['emoji-picker-react', 'react-is', 'recharts']
+  },
+  resolve: {
+    alias: {
+      'react-is': 'react-is/cjs/react-is.development.js',
+    },
+  },
 })

@@ -199,7 +199,7 @@ const StudentRecordsSpreadsheet = () => {
             setLoading(true);
             const params = {};
             if (classFilter !== 'all') params.classLevel = classFilter;
-            const res = await axios.get('http://localhost:2000/student-records/with-permissions', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/student-records/with-permissions', {
                 headers,
                 params
             });
@@ -214,7 +214,7 @@ const StudentRecordsSpreadsheet = () => {
 
     const fetchResultTemplate = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/result-template', { headers });
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/result-template', { headers });
             setResultTemplate(res.data.template);
         } catch { /* no template yet */ }
     };
@@ -222,7 +222,7 @@ const StudentRecordsSpreadsheet = () => {
     const initializeClass = async () => {
         if (!classFilter || classFilter === 'all') { toast.error('Please select a specific class sector'); return; }
         try {
-            const res = await axios.post('http://localhost:2000/student-records/initialize-class',
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/student-records/initialize-class',
                 { classLevel: classFilter, term: 'Current Term', academicYear: '2025/2026' },
                 { headers }
             );
@@ -234,7 +234,7 @@ const StudentRecordsSpreadsheet = () => {
     const publishSubject = async (subject, publish) => {
         if (!classFilter || classFilter === 'all') { toast.error('Please select a specific class sector'); return; }
         try {
-            const res = await axios.post('http://localhost:2000/student-records/publish-subject',
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/student-records/publish-subject',
                 { classLevel: classFilter, subject: subject.label, publish },
                 { headers }
             );
@@ -254,7 +254,7 @@ const StudentRecordsSpreadsheet = () => {
         const { recordId, subject } = editingCell;
         const subjectLabel = subjects.find(s => s.key === subject)?.label;
         try {
-            await axios.put(`http://localhost:2000/student-records/${recordId}/exam-score`,
+            await axios.put(`https://educbt-pro-backend.onrender.com/student-records/${recordId}/exam-score`,
                 { subject: subjectLabel, score: parseFloat(tempValue) || 0 },
                 { headers }
             );

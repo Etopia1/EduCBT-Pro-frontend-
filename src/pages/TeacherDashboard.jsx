@@ -94,10 +94,10 @@ const TeacherDashboard = () => {
         setLoading(true);
         try {
             const [studRes, examRes, resultRes, gradingRes] = await Promise.allSettled([
-                axios.get('http://localhost:2000/school/teacher/pending-students',  { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:2000/exam/teacher/all',                 { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:2000/exam/results',                     { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:2000/exam/grading/list',               { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('https://educbt-pro-backend.onrender.com/school/teacher/pending-students',  { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('https://educbt-pro-backend.onrender.com/exam/teacher/all',                 { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('https://educbt-pro-backend.onrender.com/exam/results',                     { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('https://educbt-pro-backend.onrender.com/exam/grading/list',               { headers: { Authorization: `Bearer ${token}` } }),
             ]);
             if (studRes.status   === 'fulfilled') setPendingStudents(studRes.value.data   || []);
             if (examRes.status   === 'fulfilled') setExams          (examRes.value.data   || []);
@@ -133,7 +133,7 @@ const TeacherDashboard = () => {
     const handleApprove = async (studentId) => {
         setApprovingId(studentId);
         try {
-            await axios.post(`http://localhost:2000/school/teacher/approve-student/${studentId}`, {}, {
+            await axios.post(`https://educbt-pro-backend.onrender.com/school/teacher/approve-student/${studentId}`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Student verified ✓');
@@ -150,7 +150,7 @@ const TeacherDashboard = () => {
         const newActive = !exam.isActive;
         const newStatus = newActive ? 'active' : 'ended';
         try {
-            await axios.patch(`http://localhost:2000/exam/${exam._id}/status`, {
+            await axios.patch(`https://educbt-pro-backend.onrender.com/exam/${exam._id}/status`, {
                 isActive: newActive,
                 status:   newStatus
             }, { headers: { Authorization: `Bearer ${token}` } });
@@ -168,7 +168,7 @@ const TeacherDashboard = () => {
     const handleDeleteExam = async (exam) => {
         setDeletingId(exam._id);
         try {
-            await axios.delete(`http://localhost:2000/exam/${exam._id}`, {
+            await axios.delete(`https://educbt-pro-backend.onrender.com/exam/${exam._id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExams(prev => prev.filter(e => e._id !== exam._id));

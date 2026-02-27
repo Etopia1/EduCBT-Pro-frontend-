@@ -61,8 +61,8 @@ const TeacherAnalytics = () => {
         setLoading(true);
         try {
             const [examRes, resultRes] = await Promise.all([
-                axios.get('http://localhost:2000/exam/teacher/all', { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:2000/exam/results', { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('https://educbt-pro-backend.onrender.com/exam/teacher/all', { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('https://educbt-pro-backend.onrender.com/exam/results', { headers: { Authorization: `Bearer ${token}` } }),
             ]);
             setExams(examRes.data || []);
             setResults(resultRes.data || []);

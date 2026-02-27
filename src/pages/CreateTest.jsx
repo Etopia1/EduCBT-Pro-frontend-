@@ -55,7 +55,7 @@ const CreateTest = () => {
     const fetchExamForEdit = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`http://localhost:2000/exam/${editId}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${editId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Ensure questions have all necessary fields
@@ -81,7 +81,7 @@ const CreateTest = () => {
 
     const fetchTeacherProfile = async () => {
         try {
-            const res = await axios.get('http://localhost:2000/school/teacher/profile', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/teacher/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTeacherProfile(res.data);
@@ -136,7 +136,7 @@ const CreateTest = () => {
         }
         setAiLoading(true);
         try {
-            const res = await axios.post('http://localhost:2000/exam/ai-generate', {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/exam/ai-generate', {
                 subject: examData.subject,
                 topic: aiConfig.topic,
                 classLevel: examData.classLevel || 'SS1',
@@ -175,7 +175,7 @@ const CreateTest = () => {
         formData.append('file', file);
 
         try {
-            const res = await axios.post('http://localhost:2000/exam/bulk-upload-questions', formData, {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/exam/bulk-upload-questions', formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -193,7 +193,7 @@ const CreateTest = () => {
 
     const handleDownloadTemplate = async () => {
         try {
-            const response = await axios.get('http://localhost:2000/exam/template/bulk-upload', {
+            const response = await axios.get('https://educbt-pro-backend.onrender.com/exam/template/bulk-upload', {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: 'blob'
             });
@@ -276,7 +276,7 @@ const CreateTest = () => {
         formData.append('image', file);
 
         try {
-            const res = await axios.post('http://localhost:2000/exam/teacher/upload-image', formData, {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/exam/teacher/upload-image', formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -315,12 +315,12 @@ const CreateTest = () => {
         setLoading(true);
         try {
             if (editId) {
-                await axios.put(`http://localhost:2000/exam/${editId}`, examData, {
+                await axios.put(`https://educbt-pro-backend.onrender.com/exam/${editId}`, examData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Test updated successfully!');
             } else {
-                await axios.post('http://localhost:2000/exam/create', examData, {
+                await axios.post('https://educbt-pro-backend.onrender.com/exam/create', examData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Test created successfully!');

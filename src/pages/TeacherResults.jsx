@@ -32,7 +32,7 @@ const TeacherResults = () => {
     const fetchExams = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('http://localhost:2000/exam/teacher/all', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/exam/teacher/all', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setExams(res.data);
@@ -49,7 +49,7 @@ const TeacherResults = () => {
 
     const fetchResults = async (examId) => {
         try {
-            const res = await axios.get(`http://localhost:2000/exam/${examId}/sessions`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${examId}/sessions`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const completedSessions = res.data.filter(
@@ -66,7 +66,7 @@ const TeacherResults = () => {
         if (!selectedExam) return;
         const loadingToast = toast.loading(`Preparing ${format.toUpperCase()} export...`);
         try {
-            const res = await axios.get(`http://localhost:2000/exam/${selectedExam._id}/export-results?format=${format}`, {
+            const res = await axios.get(`https://educbt-pro-backend.onrender.com/exam/${selectedExam._id}/export-results?format=${format}`, {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: 'blob'
             });

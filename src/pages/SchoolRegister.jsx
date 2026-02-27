@@ -54,7 +54,7 @@ const SchoolRegister = () => {
 
         const loadingToast = toast.loading('Initializing Institutional Registry...');
         try {
-            const res = await axios.post('http://localhost:2000/school/register', data);
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/school/register', data);
             toast.dismiss(loadingToast);
             toast.success('Registry Initialized successfully!');
             toast((t) => (

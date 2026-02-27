@@ -20,7 +20,7 @@ const Login = () => {
         e.preventDefault();
         dispatch(loginStart());
         try {
-            const res = await axios.post('http://localhost:2000/auth/login', credentials);
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/auth/login', credentials);
             dispatch(loginSuccess(res.data));
             const user = res.data.user;
             if (user.role === 'admin') navigate('/admin');
@@ -109,7 +109,13 @@ const Login = () => {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between ml-1">
                                 <label className="block text-[#1a150e]/40 text-[10px] font-black uppercase tracking-[0.2em]">Secure Pass-Key</label>
-                                <button type="button" className="text-[#c5a059] text-[9px] font-black uppercase tracking-widest hover:underline">Forgot Key?</button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => navigate('/forgot-password')} 
+                                    className="text-[#c5a059] text-[9px] font-black uppercase tracking-widest hover:underline"
+                                >
+                                    Forgot Key?
+                                </button>
                             </div>
                             <div className="relative">
                                 <input

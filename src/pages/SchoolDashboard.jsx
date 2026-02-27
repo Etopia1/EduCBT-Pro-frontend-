@@ -12,7 +12,7 @@ const SchoolDashboard = () => {
     const fetchPending = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:2000/school/pending', {
+            const res = await axios.get('https://educbt-pro-backend.onrender.com/school/pending', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPendingUsers(res.data);
@@ -24,7 +24,7 @@ const SchoolDashboard = () => {
     const handleAction = async (userId, action) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:2000/school/approve', { userId, action }, {
+            await axios.post('https://educbt-pro-backend.onrender.com/school/approve', { userId, action }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchPending(); // Refresh list
@@ -36,7 +36,7 @@ const SchoolDashboard = () => {
     const generateInvite = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post('http://localhost:2000/school/invite', { role: 'teacher' }, {
+            const res = await axios.post('https://educbt-pro-backend.onrender.com/school/invite', { role: 'teacher' }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setInviteLink(res.data.inviteLink);
